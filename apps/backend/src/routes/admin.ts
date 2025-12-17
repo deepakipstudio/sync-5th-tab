@@ -4,7 +4,7 @@ import { prisma } from '../prisma';
 // POST /admin/:tenant/banners -> create/update banners for tenant
 export async function postTenantBanner(req: Request, res: Response) {
   const { tenant } = req.params;
-  const dbTenant = await prisma.tenant.findFirst({ where: { slug: tenant } });
+  const dbTenant = await prisma.tenant.findUnique({ where: { id: tenant } });
   if (!dbTenant) return res.status(404).json({ error: 'tenant not found' });
 
   const { imageUrl, collectionId, productClass, expiresAt, sortOrder, visible } = req.body as {

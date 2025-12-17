@@ -5,7 +5,7 @@ import { proxyToMarianatek } from '../services/proxy';
 // GET /:tenant/products -> visible products for tenant
 export async function getTenantProducts(req: Request, res: Response) {
   const { tenant } = req.params;
-  const dbTenant = await prisma.tenant.findFirst({ where: { slug: tenant } });
+  const dbTenant = await prisma.tenant.findUnique({ where: { id: tenant } });
   if (!dbTenant) return res.status(404).json({ error: 'tenant not found' });
 
   const products = await prisma.product.findMany({
