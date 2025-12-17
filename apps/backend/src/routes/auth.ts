@@ -60,6 +60,7 @@ export async function authCallback(req: Request, res: Response) {
       mtSubdomain: tenant.mtSubdomain,
       clientId: tenant.clientId,
       clientSecret: tenant.clientSecret ?? undefined,
+      redirectUri: env.OAUTH_REDIRECT_URI,
     });
 
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
