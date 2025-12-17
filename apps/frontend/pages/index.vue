@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-// This is the test tenant UUID from seed.ts - in production, fetch from API
-const testTenantId = '019388b9-2e67-7b08-898d-8f8f2e90dd78'
+// This is the IPSTUDIO Sandbox tenant UUID from seed.ts - in production, fetch from API
+const testTenantId = '019b2e39-e527-7111-b41d-779d8a5806bf'
 </script>
 

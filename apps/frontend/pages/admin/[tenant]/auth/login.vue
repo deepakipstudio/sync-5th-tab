@@ -15,6 +15,7 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const config = useRuntimeConfig()
 const tenant = computed(() => route.params.tenant as string)
 const loading = ref(true)
 const error = ref('')
@@ -27,17 +28,12 @@ onMounted(async () => {
   }
 
   try {
-    const { data, error: fetchError } = await useFetch('/auth/mt/redirect', {
-      baseURL: useRuntimeConfig().public.backendUrl,
+    const data = await $fetch('/auth/mt/redirect', {
+      baseURL: config.public.backendUrl,
       params: { tenant: tenant.value, role: 'admin' },
       credentials: 'include'
     })
-    if (fetchError.value) {
-      error.value = fetchError.value.message || 'Failed to initiate login'
-      loading.value = false
-      return
-    }
-    const url = (data.value as any)?.url
+    const url = (data as any)?.url
     if (url) {
       window.location.href = url
     } else {
