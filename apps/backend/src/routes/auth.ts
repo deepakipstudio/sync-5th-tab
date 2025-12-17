@@ -1,28 +1,31 @@
 import type { Request, Response } from 'express';
-import { env } from '../config';
+import { env, getMTOAuthURLs } from '../config';
 import { prisma } from '../prisma';
 import { exchangeCodeForTokens } from '../services/oauth';
 import crypto from 'crypto';
 
 // GET /auth/mt/redirect -> Build Marianatek authorize URL (PKCE)
-export function authRedirect(req: Request, res: Response) {
+export async function authRedirect(req: Request, res: Response) {
   const { tenant } = req.query as { tenant?: string };
   if (!tenant) return res.status(400).json({ error: 'tenant is required' });
 
-  // Lookup tenant config
-  // In real app, mtSubdomain customizes URLs per tenant
-  // Here we use env.MT_AUTH_URL as placeholder
+  // Lookup tenant by UUID
+  const tenantRecord = await prisma.tenant.findUnique({ where: { id: tenant } });
+  if (!tenantRecord) return res.status(404).json({ error: 'tenant not found' });
+
   const state = crypto.randomUUID();
   const codeVerifier = crypto.randomBytes(32).toString('hex');
   const codeChallenge = base64url(sha256(codeVerifier));
 
   // Store temporary state + verifier in-memory for starter; replace with Redis later
-  (req.app as any).pkceStore ??= new Map<string, { codeVerifier: string; tenant: string }>();
-  (req.app as any).pkceStore.set(state, { codeVerifier, tenant });
+  (req.app as any).pkceStore ??= new Map<string, { codeVerifier: string; tenantId: string }>();
+  (req.app as any).pkceStore.set(state, { codeVerifier, tenantId: tenantRecord.id });
 
-  const url = new URL(env.MT_AUTH_URL);
+  // Build OAuth URLs dynamically using tenant's mtSubdomain
+  const { authUrl } = getMTOAuthURLs(tenantRecord.mtSubdomain);
+  const url = new URL(authUrl);
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('client_id', 'PLACEHOLDER_FROM_DB');
+  url.searchParams.set('client_id', tenantRecord.clientId);
   url.searchParams.set('redirect_uri', env.OAUTH_REDIRECT_URI);
   url.searchParams.set('code_challenge', codeChallenge);
   url.searchParams.set('code_challenge_method', 'S256');
@@ -42,16 +45,17 @@ export async function authCallback(req: Request, res: Response) {
     };
     if (!code || !state || !role || !userId) return res.status(400).json({ error: 'invalid payload' });
 
-    const store: Map<string, { codeVerifier: string; tenant: string }> = (req.app as any).pkceStore;
+    const store: Map<string, { codeVerifier: string; tenantId: string }> = (req.app as any).pkceStore;
     const entry = store?.get(state);
     if (!entry) return res.status(400).json({ error: 'invalid state' });
 
-    const tenant = await prisma.tenant.findFirst({ where: { slug: entry.tenant } });
+    const tenant = await prisma.tenant.findUnique({ where: { id: entry.tenantId } });
     if (!tenant) return res.status(404).json({ error: 'tenant not found' });
 
     const tokens = await exchangeCodeForTokens({
       code,
       codeVerifier: entry.codeVerifier,
+      mtSubdomain: tenant.mtSubdomain,
       clientId: tenant.clientId,
       clientSecret: tenant.clientSecret ?? undefined,
     });
@@ -80,6 +84,18 @@ export async function authCallback(req: Request, res: Response) {
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
+}
+// POST /auth/logout -> Clear session
+export async function authLogout(req: Request, res: Response) {
+  const cookieName = process.env.COOKIE_NAME || 'sync5_session'
+  const sessionId = req.cookies[cookieName]
+  
+  if (sessionId) {
+    await prisma.session.delete({ where: { id: sessionId } }).catch(() => {})
+  }
+  
+  res.clearCookie(cookieName)
+  res.json({ ok: true })
 }
 
 function sha256(input: string) {

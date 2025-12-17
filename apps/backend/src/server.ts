@@ -2,10 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { env } from './config';
-import { authRedirect, authCallback } from './routes/auth';
+import { authRedirect, authCallback, authLogout } from './routes/auth';
 import { getTenantProducts } from './routes/tenant';
 import { postTenantBanner } from './routes/admin';
 import { getMe } from './routes/me';
+import { getTenantInfo } from './routes/tenantInfo';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -18,7 +19,11 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 // Auth routes
 app.get('/auth/mt/redirect', authRedirect);
 app.post('/auth/mt/callback', authCallback);
+app.post('/auth/logout', authLogout);
 app.get('/me', getMe);
+
+// Tenant info
+app.get('/tenants/:id', getTenantInfo);
 
 // Tenant/customer routes
 app.get('/:tenant/products', getTenantProducts);

@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Tenant {
-  id           String   @id @default(uuid())
+  id           String   @id @default(uuid(7))
   name         String
   slug         String   @unique
   mtSubdomain  String
@@ -26,7 +26,7 @@ model Tenant {
 }
 
 model Product {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid(7))
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   productId   String   // Marianatek child_product ID
@@ -43,7 +43,7 @@ model Product {
 }
 
 model Session {
-  id           String   @id @default(uuid())
+  id           String   @id @default(uuid(7))
   userId       String
   tenantId     String
   tenant       Tenant   @relation(fields: [tenantId], references: [id])
@@ -58,7 +58,7 @@ model Session {
 }
 
 model Banner {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid(7))
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
   imageUrl      String

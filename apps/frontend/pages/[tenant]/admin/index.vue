@@ -1,10 +1,7 @@
 <template>
   <div class="p-8 space-y-6">
-    <h1 class="text-2xl font-semibold">Admin Dashboard</h1>
+    <h1 class="text-2xl font-semibold">{{ tenant }} - Admin Dashboard</h1>
     <form class="space-y-4" @submit.prevent="submit">
-      <div class="flex gap-2 items-center">
-        <input v-model="tenant" placeholder="tenant slug" class="border rounded px-3 py-2" />
-      </div>
       <div class="grid gap-3 grid-cols-2 max-w-xl">
         <input v-model="imageUrl" placeholder="banner image URL" class="border rounded px-3 py-2" />
         <input v-model.number="collectionId" type="number" placeholder="collectionId" class="border rounded px-3 py-2" />
@@ -20,7 +17,10 @@
 </template>
 
 <script setup lang="ts">
-const tenant = ref('demo')
+const route = useRoute()
+const config = useRuntimeConfig()
+const tenant = computed(() => route.params.tenant as string)
+
 const imageUrl = ref('')
 const collectionId = ref<number|undefined>()
 const productClass = ref('')
@@ -32,7 +32,7 @@ const msg = ref('')
 async function submit() {
   msg.value = ''
   const { error } = await useFetch(`/admin/${tenant.value}/banners`, {
-    baseURL: useRuntimeConfig().public.backendUrl,
+    baseURL: config.public.backendUrl,
     method: 'POST',
     body: {
       imageUrl: imageUrl.value,
