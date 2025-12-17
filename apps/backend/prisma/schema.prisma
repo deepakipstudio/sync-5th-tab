@@ -1,0 +1,89 @@
+// Prisma schema for sync-5th-tab
+// PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  mtSubdomain  String
+  clientId     String
+  clientSecret String?
+  createdAt    DateTime @default(now())
+
+  products Product[]
+  sessions Session[]
+  banners  Banner[]
+  users    User[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  productId   String   // Marianatek child_product ID
+  title       String?
+  description String?
+  imageUrl    String?
+  visible     Boolean  @default(true)
+  sortOrder   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([productId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  role         String   // 'admin' or 'customer'
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model Banner {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  imageUrl      String
+  collectionId  Int?
+  productClass  String?
+  expiresAt     DateTime?
+  sortOrder     Int?
+  visible       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([visible])
+}
+
+model User {
+  id                  String   @id
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
+  email               String?
+  name                String?
+  role                String
+  preferredLocationId String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([role])
+}
