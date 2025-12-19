@@ -12,26 +12,43 @@ const route = useRoute()
 const router = useRouter()
 const tenant = computed(() => route.params.tenant as string)
 const err = ref('')
+const { setAuth, authStatus } = useAuth()
 
 onMounted(async () => {
   const code = route.query.code as string
   const state = route.query.state as string
-  const role = (route.query.role as string) || 'customer'
+  const role = (route.query.role as 'admin' | 'customer') || 'customer'
   const userId = (route.query.user_id as string) || 'placeholder-user'
   if (!code || !state) {
     err.value = 'Missing code/state'
     return
   }
-  const { error } = await useFetch('/auth/mt/callback', {
-    baseURL: useRuntimeConfig().public.backendUrl,
-    method: 'POST',
-    body: { code, state, role, userId },
-    credentials: 'include'
-  })
-  if (error.value) {
-    err.value = error.value.message
-    return
+
+  try {
+    const response = await $fetch<{
+      role: 'admin' | 'customer'
+      tenantId: string
+      userId: string
+    }>('/auth/mt/callback', {
+      baseURL: useRuntimeConfig().public.backendUrl,
+      method: 'POST',
+      body: { code, state, role, userId },
+      credentials: 'include'
+    })
+
+    // Set auth state immediately after successful login
+    if (response?.role && response?.tenantId) {
+      setAuth({
+        role: response.role,
+        tenantId: response.tenantId,
+        userId: response.userId || userId,
+      })
+      authStatus.value = 'authenticated'
+    }
+
+    router.replace(`/shop/${tenant.value}`)
+  } catch (e: any) {
+    err.value = e.data?.message || e.message || 'Authentication failed'
   }
-  router.replace(`/shop/${tenant.value}`)
 })
 </script>

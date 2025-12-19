@@ -1,7 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const config = useRuntimeConfig()
-  const { role, tenant, userId, preferredLocationId } = useAuth()
-  const tenantParam = to.params.tenant as string
+  const { role, tenantId, authStatus, ensureAuthLoaded } = useAuth()
+  const tenantParam = to.params.tenant as string | undefined
 
   // Skip auth check for login/callback pages
   if (to.path.includes('/auth/login') || to.path.includes('/auth/callback')) {
@@ -13,35 +12,39 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  // Fetch session from backend if not hydrated
-  if (!role.value || !tenant.value || !userId.value) {
-    try {
-      const { data } = await useFetch('/me', {
-        baseURL: config.public.backendUrl,
-        credentials: 'include'
-      })
-      const me = data.value as any
-      if (me?.role && me?.tenantId && me?.userId) {
-        role.value = me.role
-        tenant.value = me.tenantId
-        userId.value = me.userId
-        preferredLocationId.value = me.preferredLocationId || undefined
-      }
-    } catch (_) {
-      // swallow
-    }
-  }
-
-  // Determine if admin or shop route
   const isAdminRoute = to.path.startsWith('/admin/')
   const isShopRoute = to.path.startsWith('/shop/')
+  const onTenantRoute = !!tenantParam && (isAdminRoute || isShopRoute)
 
-  // If user is not logged in and on a tenant route, redirect to login
-  if (!role.value && tenantParam) {
+  // Only guard tenant-specific admin/shop routes
+  if (!onTenantRoute) {
+    return
+  }
+
+  // Ensure auth is loaded once before making a decision
+  if (authStatus.value === 'unknown') {
+    await ensureAuthLoaded()
+  }
+
+  // If unauthenticated, send to the appropriate login page
+  if (authStatus.value === 'unauthenticated') {
     if (isAdminRoute) {
       return navigateTo(`/admin/${tenantParam}/auth/login`)
-    } else if (isShopRoute) {
+    }
+    if (isShopRoute) {
       return navigateTo(`/shop/${tenantParam}/auth/login`)
+    }
+    return
+  }
+
+  // At this point, user is authenticated. Optionally enforce canonical tenant id.
+  if (tenantId.value && tenantParam && tenantParam !== tenantId.value) {
+    const targetTenant = tenantId.value
+    if (isAdminRoute) {
+      return navigateTo(`/admin/${targetTenant}`)
+    }
+    if (isShopRoute) {
+      return navigateTo(`/shop/${targetTenant}`)
     }
   }
 

@@ -26,10 +26,12 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ layout: 'admin' })
+
 const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
-const { role, userId } = useAuth()
+const { role, userId, clearAuth } = useAuth()
 
 const tenantId = computed(() => route.params.tenant as string)
 const tenantName = ref('')
@@ -80,9 +82,8 @@ async function logout() {
     credentials: 'include'
   }).catch(() => {})
   
-  role.value = ''
-  userId.value = ''
-  
+  clearAuth()
+
   await router.push(`/admin/${tenantId.value}/auth/login`)
 }
 </script>
