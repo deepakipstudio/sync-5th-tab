@@ -13,6 +13,12 @@
           Dashboard
         </NuxtLink>
         <NuxtLink
+          :to="tenantId ? `/admin/${tenantId}/account` : '/admin'"
+          class="block px-3 py-2 rounded hover:bg-gray-800"
+        >
+          Account
+        </NuxtLink>
+        <NuxtLink
           :to="tenantId ? `/admin/${tenantId}` : '/admin'"
           class="block px-3 py-2 rounded hover:bg-gray-800"
         >

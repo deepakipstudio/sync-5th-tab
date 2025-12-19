@@ -7,6 +7,8 @@ import { getTenantProducts } from './routes/tenant';
 import { postTenantBanner } from './routes/admin';
 import { getMe } from './routes/me';
 import { getTenantInfo } from './routes/tenantInfo';
+import { getAdminAccount } from './routes/account';
+import { debugMTEndpoints } from './routes/debug';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -29,7 +31,11 @@ app.get('/tenants/:id', getTenantInfo);
 app.get('/:tenant/products', getTenantProducts);
 
 // Admin routes
+app.get('/admin/:tenant/account', getAdminAccount);
 app.post('/admin/:tenant/banners', postTenantBanner);
+
+// Debug routes (remove in production)
+app.get('/debug/mt-endpoints/:tenant', debugMTEndpoints);
 
 app.listen(env.PORT, () => {
   console.log(`Backend listening on http://localhost:${env.PORT}`);

@@ -69,11 +69,15 @@ export function getMTOAuthURLs(mtSubdomain: string) {
 
 /**
  * Build Marianatek API base URLs for a tenant
+ * 
+ * URL Structure:
+ *   - Admin API:    https://{subdomain}.marianatek.com/api/{endpoint}
+ *   - Customer API: https://{subdomain}.marianatek.com/api/customer/v1/{endpoint}
  */
 export function getMTApiURLs(mtSubdomain: string) {
   const base = getMTBaseURL(mtSubdomain);
   return {
-    adminApi: `${base}/api/admin`,
-    customerApi: `${base}/api/customer`,
+    adminApi: `${base}/api`,
+    customerApi: `${base}/api/customer/v1`,
   };
 }

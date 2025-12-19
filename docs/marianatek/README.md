@@ -87,14 +87,20 @@ const tokenResponse = await fetch(tokenUrl, { /* ... */ })
 
 Returns API base URLs for a tenant.
 
+**URL Structure:**
+- Admin API: `https://{subdomain}.marianatek.com/api/{endpoint}`
+- Customer API: `https://{subdomain}.marianatek.com/api/customer/v1/{endpoint}`
+
 ```typescript
 const { adminApi, customerApi } = getMTApiURLs(tenant.mtSubdomain)
+// adminApi    = "https://studio1.marianatek.com/api"
+// customerApi = "https://studio1.marianatek.com/api/customer/v1"
 
-// Call admin endpoints
-const adminResponse = await fetch(`${adminApi}/banners`, { /* ... */ })
+// Call admin endpoints (e.g., /api/tenants/self/)
+const adminResponse = await fetch(`${adminApi}/tenants/self/`, { /* ... */ })
 
-// Call customer endpoints
-const customerResponse = await fetch(`${customerApi}/customers`, { /* ... */ })
+// Call customer endpoints (e.g., /api/customer/v1/customers/)
+const customerResponse = await fetch(`${customerApi}/customers/`, { /* ... */ })
 ```
 
 ## 🔐 OAuth 2.0 Flow
