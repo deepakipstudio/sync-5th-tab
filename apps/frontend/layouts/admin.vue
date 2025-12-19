@@ -19,7 +19,7 @@
           Account
         </NuxtLink>
         <NuxtLink
-          :to="tenantId ? `/admin/${tenantId}` : '/admin'"
+          :to="tenantId ? `/admin/${tenantId}/banners` : '/admin'"
           class="block px-3 py-2 rounded hover:bg-gray-800"
         >
           Banners

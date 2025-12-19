@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser';
 import { env } from './config';
 import { authRedirect, authCallback, authLogout } from './routes/auth';
 import { getTenantProducts } from './routes/tenant';
-import { postTenantBanner } from './routes/admin';
+import { getTenantBanners, getTenantBanner, postTenantBanner, putTenantBanner, deleteTenantBanner } from './routes/admin';
 import { getMe } from './routes/me';
 import { getTenantInfo } from './routes/tenantInfo';
 import { getAdminAccount } from './routes/account';
@@ -32,7 +32,11 @@ app.get('/:tenant/products', getTenantProducts);
 
 // Admin routes
 app.get('/admin/:tenant/account', getAdminAccount);
+app.get('/admin/:tenant/banners', getTenantBanners);
+app.get('/admin/:tenant/banners/:id', getTenantBanner);
 app.post('/admin/:tenant/banners', postTenantBanner);
+app.put('/admin/:tenant/banners/:id', putTenantBanner);
+app.delete('/admin/:tenant/banners/:id', deleteTenantBanner);
 
 // Debug routes (remove in production)
 app.get('/debug/mt-endpoints/:tenant', debugMTEndpoints);
