@@ -58,7 +58,7 @@
         <div class="aspect-[16/9] bg-gray-100 relative">
           <img
             v-if="banner.imageUrl"
-            :src="banner.imageUrl"
+            :src="getFullImageUrl(banner.imageUrl)"
             :alt="`Banner ${banner.id}`"
             class="w-full h-full object-cover"
             @error="(e: Event) => (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23d1d5db%22%3E%3Cpath d=%22M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z%22/%3E%3C/svg%3E'"
@@ -140,26 +140,69 @@
           </div>
 
           <form @submit.prevent="saveBanner" class="p-6 space-y-4">
-            <!-- Image URL -->
+            <!-- Image Upload -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
-                Image URL <span class="text-red-500">*</span>
+                Banner Image <span v-if="!editingBanner" class="text-red-500">*</span>
               </label>
-              <input
-                v-model="form.imageUrl"
-                type="url"
-                required
-                placeholder="https://example.com/banner.jpg"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-              />
-              <!-- Image Preview -->
-              <div v-if="form.imageUrl" class="mt-2 rounded-lg overflow-hidden border border-gray-200">
-                <img
-                  :src="form.imageUrl"
-                  alt="Preview"
-                  class="w-full aspect-[16/9] object-cover"
-                  @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+              
+              <!-- Drop Zone -->
+              <div
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop.prevent="handleDrop"
+                @click="triggerFileInput"
+                :class="[
+                  'relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors',
+                  isDragging 
+                    ? 'border-gray-900 bg-gray-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+                ]"
+              >
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  class="hidden"
+                  @change="handleFileSelect"
                 />
+                
+                <!-- Preview or Upload Icon -->
+                <div v-if="imagePreview" class="space-y-3">
+                  <img
+                    :src="imagePreview"
+                    alt="Preview"
+                    class="mx-auto max-h-40 rounded-lg object-contain"
+                  />
+                  <p class="text-sm text-gray-600">
+                    {{ selectedFile?.name || 'Current image' }}
+                    <span v-if="selectedFile" class="text-gray-400">
+                      ({{ formatFileSize(selectedFile.size) }})
+                    </span>
+                  </p>
+                  <button
+                    type="button"
+                    @click.stop="clearImage"
+                    class="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div v-else class="space-y-2">
+                  <svg class="mx-auto w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p class="text-sm text-gray-600">
+                    <span class="font-medium text-gray-900">Click to upload</span> or drag and drop
+                  </p>
+                </div>
+              </div>
+              
+              <!-- Guidelines -->
+              <div class="mt-2 text-xs text-gray-500 space-y-0.5">
+                <p>Recommended size: 1920 x 640 pixels (3:1 aspect ratio)</p>
+                <p>Maximum file size: 2MB</p>
+                <p>Supported formats: JPG, PNG, WebP, GIF</p>
               </div>
             </div>
 
@@ -334,9 +377,13 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin' })
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+
 interface Banner {
   id: string
   imageUrl: string
+  filename?: string
+  originalName?: string
   collectionId: number | null
   productClass: string | null
   expiresAt: string | null
@@ -361,9 +408,14 @@ const editingBanner = ref<Banner | null>(null)
 const saving = ref(false)
 const formError = ref('')
 
+// File upload state
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const selectedFile = ref<File | null>(null)
+const imagePreview = ref<string | null>(null)
+const isDragging = ref(false)
+
 // Form state
 const form = ref({
-  imageUrl: '',
   collectionId: null as number | null,
   productClass: '',
   expiresAt: '',
@@ -383,6 +435,12 @@ const toast = ref({
   message: '',
 })
 
+// Get full image URL (backend serves from /uploads)
+function getFullImageUrl(imageUrl: string): string {
+  if (imageUrl.startsWith('http')) return imageUrl
+  return `${config.public.backendUrl}${imageUrl}`
+}
+
 // Fetch banners
 async function fetchBanners() {
   loading.value = true
@@ -401,17 +459,82 @@ async function fetchBanners() {
   }
 }
 
+// Trigger file input click
+function triggerFileInput() {
+  fileInputRef.value?.click()
+}
+
+// Handle file selection
+function handleFileSelect(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    validateAndSetFile(input.files[0])
+  }
+}
+
+// Handle drag and drop
+function handleDrop(event: DragEvent) {
+  isDragging.value = false
+  const files = event.dataTransfer?.files
+  if (files && files[0]) {
+    validateAndSetFile(files[0])
+  }
+}
+
+// Validate and set file
+function validateAndSetFile(file: File) {
+  // Check file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  if (!allowedTypes.includes(file.type)) {
+    formError.value = 'Invalid file type. Please upload JPG, PNG, WebP, or GIF.'
+    return
+  }
+
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    formError.value = 'File too large. Maximum size is 2MB.'
+    return
+  }
+
+  formError.value = ''
+  selectedFile.value = file
+
+  // Create preview
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imagePreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+// Clear selected image
+function clearImage() {
+  selectedFile.value = null
+  imagePreview.value = null
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+}
+
+// Format file size
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
 // Open create modal
 function openCreateModal() {
   editingBanner.value = null
   form.value = {
-    imageUrl: '',
     collectionId: null,
     productClass: '',
     expiresAt: '',
     sortOrder: null,
     visible: true,
   }
+  selectedFile.value = null
+  imagePreview.value = null
   formError.value = ''
   showModal.value = true
 }
@@ -420,13 +543,15 @@ function openCreateModal() {
 function openEditModal(banner: Banner) {
   editingBanner.value = banner
   form.value = {
-    imageUrl: banner.imageUrl,
     collectionId: banner.collectionId,
     productClass: banner.productClass || '',
     expiresAt: banner.expiresAt ? formatDateTimeLocal(banner.expiresAt) : '',
     sortOrder: banner.sortOrder,
     visible: banner.visible,
   }
+  selectedFile.value = null
+  // Show current image as preview
+  imagePreview.value = getFullImageUrl(banner.imageUrl)
   formError.value = ''
   showModal.value = true
 }
@@ -435,12 +560,15 @@ function openEditModal(banner: Banner) {
 function closeModal() {
   showModal.value = false
   editingBanner.value = null
+  selectedFile.value = null
+  imagePreview.value = null
 }
 
 // Save banner (create or update)
 async function saveBanner() {
-  if (!form.value.imageUrl) {
-    formError.value = 'Image URL is required'
+  // Validate: require image for new banners
+  if (!editingBanner.value && !selectedFile.value) {
+    formError.value = 'Please select an image'
     return
   }
 
@@ -448,21 +576,33 @@ async function saveBanner() {
   formError.value = ''
 
   try {
-    const payload = {
-      imageUrl: form.value.imageUrl,
-      collectionId: form.value.collectionId || null,
-      productClass: form.value.productClass || null,
-      expiresAt: form.value.expiresAt ? new Date(form.value.expiresAt).toISOString() : null,
-      sortOrder: form.value.sortOrder,
-      visible: form.value.visible,
+    // Build FormData
+    const formData = new FormData()
+    
+    if (selectedFile.value) {
+      formData.append('image', selectedFile.value)
     }
+    
+    if (form.value.collectionId !== null) {
+      formData.append('collectionId', String(form.value.collectionId))
+    }
+    if (form.value.productClass) {
+      formData.append('productClass', form.value.productClass)
+    }
+    if (form.value.expiresAt) {
+      formData.append('expiresAt', new Date(form.value.expiresAt).toISOString())
+    }
+    if (form.value.sortOrder !== null) {
+      formData.append('sortOrder', String(form.value.sortOrder))
+    }
+    formData.append('visible', String(form.value.visible))
 
     if (editingBanner.value) {
       // Update
       await $fetch(`/admin/${tenantId.value}/banners/${editingBanner.value.id}`, {
         baseURL: config.public.backendUrl,
         method: 'PUT',
-        body: payload,
+        body: formData,
         credentials: 'include',
       })
       showToast('success', 'Banner updated successfully')
@@ -471,7 +611,7 @@ async function saveBanner() {
       await $fetch(`/admin/${tenantId.value}/banners`, {
         baseURL: config.public.backendUrl,
         method: 'POST',
-        body: payload,
+        body: formData,
         credentials: 'include',
       })
       showToast('success', 'Banner created successfully')
@@ -555,4 +695,3 @@ onMounted(() => {
   fetchBanners()
 })
 </script>
-
