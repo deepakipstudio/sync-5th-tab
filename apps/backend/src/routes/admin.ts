@@ -39,6 +39,11 @@ export function handleMulterError(err: any, req: Request, res: Response, next: N
 // Export multer middleware for use in server.ts
 export const uploadBannerImage = upload.single('image');
 
+// Multer middleware for multiple product/variant images
+export const uploadProductImages = upload.fields([
+  { name: 'images', maxCount: 20 }, // Support up to 20 images
+]);
+
 // Helper to validate tenant exists
 async function validateTenant(tenantId: string) {
   return prisma.tenant.findUnique({ where: { id: tenantId } });

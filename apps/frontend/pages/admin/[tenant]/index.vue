@@ -59,19 +59,25 @@
         </div>
       </NuxtLink>
 
-      <!-- Products Card (Coming Soon) -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 opacity-60 cursor-not-allowed">
-        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-          <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Products Card -->
+      <NuxtLink
+        :to="`/admin/${tenantId}/products`"
+        class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md hover:border-gray-300 transition-all group"
+      >
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
         </div>
         <h3 class="text-lg font-medium text-gray-900 mb-1">Products</h3>
         <p class="text-sm text-gray-500">Manage products and inventory</p>
-        <div class="mt-4 text-sm font-medium text-gray-400 flex items-center gap-1">
-          Coming soon
+        <div class="mt-4 text-sm font-medium text-blue-600 group-hover:text-blue-700 flex items-center gap-1">
+          Manage products
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
         </div>
-      </div>
+      </NuxtLink>
     </div>
 
     <!-- Stats Overview (placeholder for future) -->
@@ -83,7 +89,7 @@
           <p class="text-sm text-gray-500 mt-1">Active Banners</p>
         </div>
         <div class="text-center p-4 bg-gray-50 rounded-lg">
-          <p class="text-3xl font-semibold text-gray-900">--</p>
+          <p class="text-3xl font-semibold text-gray-900">{{ productCount }}</p>
           <p class="text-sm text-gray-500 mt-1">Total Products</p>
         </div>
         <div class="text-center p-4 bg-gray-50 rounded-lg">
@@ -108,6 +114,7 @@ const { clearAuth } = useAuth()
 
 const tenantId = computed(() => route.params.tenant as string)
 const tenantName = ref('')
+const productCount = ref(0)
 
 // Fetch tenant info
 onMounted(async () => {
@@ -119,6 +126,17 @@ onMounted(async () => {
       tenantName.value = (data as any).data?.name
     }
   } catch (_) {}
+
+  // Fetch product count
+  try {
+    const productsData = await $fetch<{ products: any[] }>(`/admin/${tenantId.value}/products`, {
+      baseURL: config.public.backendUrl,
+      credentials: 'include',
+    })
+    productCount.value = productsData.products?.length || 0
+  } catch (_) {
+    productCount.value = 0
+  }
 })
 
 async function logout() {

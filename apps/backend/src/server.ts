@@ -13,7 +13,21 @@ import {
   deleteTenantBanner,
   uploadBannerImage,
   handleMulterError,
+  uploadProductImages,
 } from './routes/admin';
+import {
+  getTenantProducts as getAdminTenantProducts,
+  searchMTProducts,
+  getMTProductForAdd,
+  postTenantProduct,
+  getTenantProduct,
+  putTenantProduct,
+  deleteTenantProduct,
+  getProductVariants,
+  getProductVariant,
+  putProductVariant,
+  syncProducts,
+} from './routes/products';
 import { getMe } from './routes/me';
 import { getTenantInfo } from './routes/tenantInfo';
 import { getAdminAccount } from './routes/account';
@@ -44,11 +58,26 @@ app.get('/:tenant/products', getTenantProducts);
 
 // Admin routes
 app.get('/admin/:tenant/account', getAdminAccount);
+
+// Banner routes
 app.get('/admin/:tenant/banners', getTenantBanners);
 app.get('/admin/:tenant/banners/:id', getTenantBanner);
 app.post('/admin/:tenant/banners', uploadBannerImage, handleMulterError, postTenantBanner);
 app.put('/admin/:tenant/banners/:id', uploadBannerImage, handleMulterError, putTenantBanner);
 app.delete('/admin/:tenant/banners/:id', deleteTenantBanner);
+
+// Product routes
+app.get('/admin/:tenant/products', getAdminTenantProducts);
+app.get('/admin/:tenant/products/mt/search', searchMTProducts);
+app.get('/admin/:tenant/products/add', getMTProductForAdd);
+app.post('/admin/:tenant/products', uploadProductImages, handleMulterError, postTenantProduct);
+app.get('/admin/:tenant/products/:id', getTenantProduct);
+app.put('/admin/:tenant/products/:id', uploadProductImages, handleMulterError, putTenantProduct);
+app.delete('/admin/:tenant/products/:id', deleteTenantProduct);
+app.get('/admin/:tenant/products/:id/variants', getProductVariants);
+app.get('/admin/:tenant/products/variants/:id', getProductVariant);
+app.put('/admin/:tenant/products/variants/:id', uploadProductImages, handleMulterError, putProductVariant);
+app.post('/admin/:tenant/products/sync', syncProducts);
 
 // Debug routes (remove in production)
 app.get('/debug/mt-endpoints/:tenant', debugMTEndpoints);

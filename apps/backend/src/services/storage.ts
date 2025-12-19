@@ -3,12 +3,16 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 
 // Storage configuration
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'banners');
+const BANNERS_DIR = path.join(process.cwd(), 'uploads', 'banners');
+const PRODUCTS_DIR = path.join(process.cwd(), 'uploads', 'products');
+const VARIANTS_DIR = path.join(process.cwd(), 'uploads', 'variants');
 
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
+// Ensure upload directories exist
+[BANNERS_DIR, PRODUCTS_DIR, VARIANTS_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 /**
  * Storage service abstraction layer.
@@ -19,6 +23,9 @@ export interface StorageService {
   saveFile(buffer: Buffer, originalName: string, mimeType: string): Promise<string>;
   deleteFile(filename: string): Promise<void>;
   getFileUrl(filename: string): string;
+  saveImage(buffer: Buffer, originalName: string, mimeType: string, type: 'product' | 'variant'): Promise<string>;
+  deleteImage(filename: string, type: 'product' | 'variant'): Promise<void>;
+  getImageUrl(filename: string, type: 'product' | 'variant'): string;
 }
 
 /**
@@ -45,7 +52,7 @@ export const localStorageService: StorageService = {
   async saveFile(buffer: Buffer, originalName: string, mimeType: string): Promise<string> {
     const ext = getExtension(mimeType);
     const filename = `${randomUUID()}${ext}`;
-    const filePath = path.join(UPLOAD_DIR, filename);
+    const filePath = path.join(BANNERS_DIR, filename);
     
     await fs.promises.writeFile(filePath, buffer);
     
@@ -56,7 +63,7 @@ export const localStorageService: StorageService = {
    * Delete file from local filesystem
    */
   async deleteFile(filename: string): Promise<void> {
-    const filePath = path.join(UPLOAD_DIR, filename);
+    const filePath = path.join(BANNERS_DIR, filename);
     
     try {
       await fs.promises.unlink(filePath);
@@ -73,6 +80,45 @@ export const localStorageService: StorageService = {
    */
   getFileUrl(filename: string): string {
     return `/uploads/banners/${filename}`;
+  },
+
+  /**
+   * Save product or variant image
+   */
+  async saveImage(buffer: Buffer, originalName: string, mimeType: string, type: 'product' | 'variant'): Promise<string> {
+    const ext = getExtension(mimeType);
+    const filename = `${randomUUID()}${ext}`;
+    const uploadDir = type === 'product' ? PRODUCTS_DIR : VARIANTS_DIR;
+    const filePath = path.join(uploadDir, filename);
+    
+    await fs.promises.writeFile(filePath, buffer);
+    
+    return filename;
+  },
+
+  /**
+   * Delete product or variant image
+   */
+  async deleteImage(filename: string, type: 'product' | 'variant'): Promise<void> {
+    const uploadDir = type === 'product' ? PRODUCTS_DIR : VARIANTS_DIR;
+    const filePath = path.join(uploadDir, filename);
+    
+    try {
+      await fs.promises.unlink(filePath);
+    } catch (err: any) {
+      // Ignore if file doesn't exist
+      if (err.code !== 'ENOENT') {
+        throw err;
+      }
+    }
+  },
+
+  /**
+   * Get the URL path for serving product or variant image
+   */
+  getImageUrl(filename: string, type: 'product' | 'variant'): string {
+    const folder = type === 'product' ? 'products' : 'variants';
+    return `/uploads/${folder}/${filename}`;
   },
 };
 

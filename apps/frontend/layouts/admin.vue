@@ -24,12 +24,12 @@
         >
           Banners
         </NuxtLink>
-        <button
-          type="button"
-          class="w-full text-left px-3 py-2 rounded hover:bg-gray-800 mt-4 text-gray-400 cursor-default"
+        <NuxtLink
+          :to="tenantId ? `/admin/${tenantId}/products` : '/admin'"
+          class="block px-3 py-2 rounded hover:bg-gray-800"
         >
-          Products (coming soon)
-        </button>
+          Products
+        </NuxtLink>
       </nav>
       <div class="px-4 py-3 text-xs text-gray-500 border-t border-gray-800">
         Tenant: <span class="font-mono" v-if="tenantId">{{ tenantId }}</span>

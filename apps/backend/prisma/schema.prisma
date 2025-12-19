@@ -26,20 +26,22 @@ model Tenant {
 }
 
 model Product {
-  id          String   @id @default(uuid(7))
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  productId   String   // Marianatek child_product ID
-  title       String?
-  description String?
-  imageUrl    String?
-  visible     Boolean  @default(true)
-  sortOrder   Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(uuid(7))
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  mtProductId   String   // Marianatek product ID (e.g., "14965")
+  description   String?  // Custom description (overrides MT description)
+  visible       Boolean  @default(true)
+  sortOrder     Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
+  variants      ProductVariant[]
+  images        ProductImage[]
+  
+  @@unique([tenantId, mtProductId])
   @@index([tenantId])
-  @@index([productId])
+  @@index([mtProductId])
 }
 
 model Session {
@@ -74,6 +76,45 @@ model Banner {
 
   @@index([tenantId])
   @@index([visible])
+}
+
+model ProductVariant {
+  id            String   @id @default(uuid(7))
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  mtVariantId   String   // Marianatek variant ID (e.g., "14966")
+  sku           String   // SKU from MT (e.g., "TEST8877")
+  description   String?  // Custom description (overrides MT description)
+  visible       Boolean  @default(true)
+  sortOrder     Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  images        ProductImage[]
+  
+  @@unique([productId, mtVariantId])
+  @@index([productId])
+  @@index([mtVariantId])
+  @@index([sku])
+}
+
+model ProductImage {
+  id            String   @id @default(uuid(7))
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId     String?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  filename      String   // stored filename (UUID-based)
+  originalName  String   // original upload name
+  mimeType      String   // image/jpeg, image/png, etc.
+  size          Int      // file size in bytes
+  isFeatured    Boolean  @default(false) // featured image flag
+  sortOrder     Int      @default(0) // for gallery ordering
+  createdAt     DateTime @default(now())
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([isFeatured])
 }
 
 model User {
