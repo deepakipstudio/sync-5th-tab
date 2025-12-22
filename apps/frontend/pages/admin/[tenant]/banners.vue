@@ -19,7 +19,7 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-admin-brand-strong"></div>
     </div>
 
     <!-- Error State -->
@@ -64,7 +64,7 @@
             @error="(e: Event) => (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23d1d5db%22%3E%3Cpath d=%22M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z%22/%3E%3C/svg%3E'"
           />
           <div v-else class="w-full h-full flex items-center justify-center">
-            <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-12 h-12 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
@@ -107,7 +107,7 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex gap-2 pt-3 border-t border-gray-100">
+          <div class="flex gap-2 pt-3 border-t border-admin-border-subtle">
             <button
               @click="openEditModal(banner)"
               class="flex-1 text-sm text-admin-text-primary bg-admin-surface-raised hover:bg-admin-surface-raised px-3 py-1.5 rounded transition-colors"
@@ -143,7 +143,7 @@
             <!-- Image Upload -->
             <div>
               <label class="block text-sm font-medium text-admin-text-primary mb-1">
-                Banner Image <span v-if="!editingBanner" class="text-red-500">*</span>
+                Banner Image <span v-if="!editingBanner" class="text-admin-state-danger-text">*</span>
               </label>
               
               <!-- Drop Zone -->
@@ -155,7 +155,7 @@
                 :class="[
                   'relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors',
                   isDragging 
-                    ? 'border-gray-900 bg-admin-surface-raised' 
+                    ? 'border-admin-brand-strong bg-admin-surface-hover' 
                     : 'border-admin-border hover:border-admin-border-strong'
                 ]"
               >
@@ -334,7 +334,7 @@
               <button
                 @click="deleteBanner"
                 :disabled="deleting"
-                class="flex-1 bg-admin-state-danger-text text-admin-text-inverse px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                class="flex-1 bg-admin-state-danger-text text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
               >
                 {{ deleting ? 'Deleting...' : 'Delete' }}
               </button>

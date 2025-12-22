@@ -18,7 +18,7 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-admin-brand-strong"></div>
     </div>
 
     <!-- Error State -->
@@ -38,11 +38,11 @@
           @dragover.prevent="handleDragOver"
           @dragleave.prevent="handleDragLeave"
           @drop.prevent="handleDrop"
-          :class="{ 'border-gray-900 bg-admin-surface-raised': isDragging }"
+          :class="{ 'border-admin-brand-strong bg-admin-surface-hover': isDragging }"
         >
           <div class="space-y-1 text-center">
             <svg
-              class="mx-auto h-12 w-12 text-gray-400"
+              class="mx-auto h-12 w-12 text-admin-text-muted"
               stroke="currentColor"
               fill="none"
               viewBox="0 0 48 48"
@@ -79,7 +79,7 @@
             :key="img.id"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-admin-border'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-admin-brand-strong' : 'border-admin-border'">
               <img
                 :src="getFullImageUrl(img.imageUrl)"
                 :alt="`Variant image`"
@@ -113,7 +113,7 @@
             :key="`new-${index}`"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-admin-border'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-admin-brand-strong' : 'border-admin-border'">
               <img
                 :src="img.preview"
                 :alt="`New image ${index + 1}`"

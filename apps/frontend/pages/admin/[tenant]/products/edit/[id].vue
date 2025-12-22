@@ -95,7 +95,7 @@
           @dragover.prevent="handleDragOver"
           @dragleave.prevent="handleDragLeave"
           @drop.prevent="handleDrop"
-          :class="{ 'border-gray-900 bg-admin-surface-raised': isDragging }"
+          :class="{ 'border-admin-brand-strong bg-admin-surface-hover': isDragging }"
         >
           <div class="space-y-1 text-center">
             <svg
@@ -136,7 +136,7 @@
             :key="img.id"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-admin-border'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-admin-brand-strong' : 'border-admin-border'">
               <img
                 :src="getFullImageUrl(img.imageUrl)"
                 :alt="`Product image`"
@@ -170,7 +170,7 @@
             :key="`new-${index}`"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-admin-border'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-admin-brand-strong' : 'border-admin-border'">
               <img
                 :src="img.preview"
                 :alt="`New image ${index + 1}`"
@@ -313,7 +313,7 @@
                             <div class="font-semibold text-admin-text-primary">${{ location.price }}</div>
                             <div
                               v-if="location.price !== variant.mtData.attributes?.price"
-                              class="text-xs text-amber-600 mt-0.5"
+                              class="text-xs text-admin-state-warning-text mt-0.5"
                             >
                               Different from base
                             </div>

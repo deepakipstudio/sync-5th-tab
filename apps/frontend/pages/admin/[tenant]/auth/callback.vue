@@ -2,7 +2,7 @@
   <div class="min-h-screen flex items-center justify-center">
     <div class="space-y-4 text-center">
       <h1 class="text-2xl font-semibold">Completing admin login…</h1>
-      <p v-if="err" class="text-red-600">{{ err }}</p>
+      <p v-if="err" class="text-admin-state-danger-text">{{ err }}</p>
     </div>
   </div>
 </template>
