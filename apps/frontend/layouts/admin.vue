@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-admin-surface-sunken flex">
+  <div class="min-h-screen bg-admin-surface-sunken flex font-admin">
     <!-- Mobile Menu Button -->
     <button
       @click="mobileMenuOpen = true"

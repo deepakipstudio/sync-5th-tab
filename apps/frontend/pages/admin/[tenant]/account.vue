@@ -1,41 +1,60 @@
 <template>
-  <div class="p-8 space-y-6">
-    <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-semibold">Account</h1>
-      <NuxtLink
-        :to="`/admin/${tenantId}`"
-        class="text-admin-text-secondary hover:text-admin-text-primary"
-      >
-        ← Back to Dashboard
-      </NuxtLink>
+  <div class="space-y-8">
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl font-semibold text-admin-text-primary">Account</h1>
+      <p class="text-sm text-admin-text-secondary mt-1">View your account details and settings</p>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="bg-admin-surface-base p-6 rounded-lg shadow">
-      <div class="animate-pulse space-y-4">
-        <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
-        <div class="h-4 bg-admin-surface-raised rounded w-1/2"></div>
-        <div class="h-4 bg-admin-surface-raised rounded w-1/3"></div>
+    <div v-if="loading" class="space-y-8">
+      <!-- Tenant Info Skeleton -->
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6 animate-pulse">
+        <div class="h-6 bg-admin-surface-raised rounded w-1/3 mb-6"></div>
+        <div class="space-y-4">
+          <div class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
+            <div class="h-4 bg-admin-surface-raised rounded w-3/4 col-span-2"></div>
+          </div>
+          <div class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
+            <div class="h-4 bg-admin-surface-raised rounded w-3/4 col-span-2"></div>
+          </div>
+          <div class="grid grid-cols-3 gap-4 py-3">
+            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
+            <div class="h-4 bg-admin-surface-raised rounded w-3/4 col-span-2"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Session Info Skeleton -->
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6 animate-pulse">
+        <div class="h-6 bg-admin-surface-raised rounded w-1/4 mb-6"></div>
+        <div class="space-y-4">
+          <div class="grid grid-cols-3 gap-4 py-3">
+            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
+            <div class="h-4 bg-admin-surface-raised rounded w-1/4 col-span-2"></div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border text-admin-state-danger-text p-6 rounded-lg">
+    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
       <p class="font-medium">Failed to load account information</p>
       <p class="text-sm mt-1">{{ error }}</p>
       <button
         @click="fetchAccount"
-        class="mt-4 bg-admin-state-danger-text text-white px-4 py-2 rounded text-sm hover:opacity-90"
+        class="mt-4 bg-admin-state-danger-text text-white px-4 py-2 rounded-lg text-sm hover:opacity-90 transition-colors"
       >
         Try Again
       </button>
     </div>
 
     <!-- Account Info -->
-    <div v-else-if="account" class="space-y-6">
+    <div v-else-if="account" class="space-y-8">
       <!-- Tenant Info -->
-      <div class="bg-admin-surface-base p-6 rounded-lg shadow">
-        <h2 class="text-lg font-medium mb-6 text-admin-text-primary">Tenant Information</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold mb-6 text-admin-text-primary">Tenant Information</h2>
         
         <dl class="space-y-4">
           <div class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
@@ -78,8 +97,8 @@
       </div>
 
       <!-- Session Info -->
-      <div class="bg-admin-surface-base p-6 rounded-lg shadow">
-        <h2 class="text-lg font-medium mb-6 text-admin-text-primary">Session</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold mb-6 text-admin-text-primary">Session</h2>
         
         <dl class="space-y-4">
           <div class="grid grid-cols-3 gap-4 py-3">
