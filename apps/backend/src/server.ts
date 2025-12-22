@@ -11,6 +11,8 @@ import {
   postTenantBanner,
   putTenantBanner,
   deleteTenantBanner,
+  getStoreSettings,
+  updateBrandSettings,
   uploadBannerImage,
   handleMulterError,
   uploadProductImages,
@@ -30,7 +32,7 @@ import {
   checkProductExists,
 } from './routes/products';
 import { getMe } from './routes/me';
-import { getTenantInfo } from './routes/tenantInfo';
+import { getTenantInfo, getTenantBranding } from './routes/tenantInfo';
 import { getAdminAccount } from './routes/account';
 import { debugMTEndpoints } from './routes/debug';
 
@@ -53,12 +55,17 @@ app.get('/me', getMe);
 
 // Tenant info
 app.get('/tenants/:id', getTenantInfo);
+app.get('/tenants/:id/branding', getTenantBranding);
 
 // Tenant/customer routes
 app.get('/:tenant/products', getTenantProducts);
 
 // Admin routes
 app.get('/admin/:tenant/account', getAdminAccount);
+
+// Store settings routes
+app.get('/admin/:tenant/store-settings', getStoreSettings);
+app.put('/admin/:tenant/store-settings/brand', updateBrandSettings);
 
 // Banner routes
 app.get('/admin/:tenant/banners', getTenantBanners);

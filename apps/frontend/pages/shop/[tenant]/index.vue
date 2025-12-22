@@ -8,12 +8,17 @@
         <div class="flex gap-4 justify-center">
           <NuxtLink 
             :to="`/admin/${tenantId}`" 
-            class="bg-blue-600 text-white px-4 py-2 rounded"
+            class="px-4 py-2 rounded text-white"
+            :style="{ backgroundColor: 'var(--tenant-primary, #8e213e)' }"
             v-if="role === 'admin'"
           >
             Admin Dashboard
           </NuxtLink>
-          <button @click="logout" class="bg-red-600 text-white px-4 py-2 rounded">
+          <button 
+            @click="logout" 
+            class="px-4 py-2 rounded text-white"
+            :style="{ backgroundColor: 'var(--tenant-secondary, #a83d5a)' }"
+          >
             Logout
           </button>
         </div>
@@ -26,6 +31,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ layout: 'shop' })
+
 const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
