@@ -250,10 +250,10 @@
                 v-for="product in mtProducts"
                 :key="product.id"
                 @click="selectMTProduct(product)"
-                class="p-4 border border-gray-200 rounded-lg hover:border-gray-900 hover:bg-gray-50 cursor-pointer transition-colors"
+                class="p-4 border border-gray-200 rounded-lg hover:border-gray-900 hover:bg-gray-50 cursor-pointer transition-colors relative"
               >
                 <div class="flex items-start justify-between">
-                  <div>
+                  <div class="flex-1">
                     <h3 class="font-medium text-gray-900">{{ product.attributes?.title || 'Untitled Product' }}</h3>
                     <p v-if="product.attributes?.description" class="text-sm text-gray-600 mt-1 line-clamp-2">
                       {{ product.attributes.description }}
@@ -264,6 +264,11 @@
                         {{ product.attributes.children_count }} variant{{ product.attributes.children_count !== 1 ? 's' : '' }}
                       </span>
                     </div>
+                  </div>
+                  <div v-if="isProductAdded(product.id)" class="ml-4 flex-shrink-0">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Added
+                    </span>
                   </div>
                 </div>
               </div>
@@ -426,7 +431,7 @@ const searching = ref(false)
 const mtProducts = ref<any[]>([])
 const mtProductsTotal = ref(0)
 const mtProductsPage = ref(1)
-const mtProductsPageSize = ref(10)
+const mtProductsPageSize = ref(20)
 const selectedProducts = ref<string[]>([])
 const syncing = ref(false)
 const syncResult = ref<any>(null)
@@ -491,8 +496,28 @@ function closeAddModal() {
   showAddModal.value = false
 }
 
-function selectMTProduct(product: any) {
-  navigateTo(`/admin/${route.params.tenant}/products/add?mtProductId=${product.id}`)
+async function selectMTProduct(product: any) {
+  try {
+    // Check if product already exists locally
+    const checkResponse = await $fetch<{ exists: boolean; productId: string | null }>(
+      `${backendUrl}/admin/${route.params.tenant}/products/check/${product.id}`,
+      {
+        credentials: 'include',
+      }
+    )
+
+    if (checkResponse.exists && checkResponse.productId) {
+      // Product exists, navigate to edit page
+      navigateTo(`/admin/${route.params.tenant}/products/edit/${checkResponse.productId}`)
+    } else {
+      // Product doesn't exist, navigate to add page
+      navigateTo(`/admin/${route.params.tenant}/products/add?mtProductId=${product.id}`)
+    }
+  } catch (err: any) {
+    console.error('Error checking product existence:', err)
+    // On error, default to add page
+    navigateTo(`/admin/${route.params.tenant}/products/add?mtProductId=${product.id}`)
+  }
 }
 
 // Sync Modal
@@ -566,6 +591,11 @@ function getFeaturedImage(product: any) {
 function getFullImageUrl(url: string) {
   if (url.startsWith('http')) return url
   return `${backendUrl}${url}`
+}
+
+// Check if a product is already added locally
+function isProductAdded(mtProductId: string): boolean {
+  return products.value.some(p => p.mtProductId === mtProductId)
 }
 
 // Menu functions

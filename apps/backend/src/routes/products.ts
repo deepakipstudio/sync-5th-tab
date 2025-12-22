@@ -118,6 +118,38 @@ export async function getTenantProducts(req: Request, res: Response) {
   }
 }
 
+// GET /admin/:tenant/products/check/:mtProductId - Check if product exists locally
+export async function checkProductExists(req: Request, res: Response) {
+  try {
+    const { tenant, mtProductId } = req.params;
+    const result = await validateTenantAndSession(req, tenant);
+    
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    const product = await prisma.product.findUnique({
+      where: {
+        tenantId_mtProductId: {
+          tenantId: tenant,
+          mtProductId: String(mtProductId),
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    res.json({
+      exists: !!product,
+      productId: product?.id || null,
+    });
+  } catch (error: any) {
+    console.error('Error checking product existence:', error);
+    res.status(500).json({ error: 'Failed to check product existence' });
+  }
+}
+
 // GET /admin/:tenant/products/mt/search - Search MT products
 export async function searchMTProducts(req: Request, res: Response) {
   try {
@@ -198,7 +230,6 @@ export async function getMTProductForAdd(req: Request, res: Response) {
       parent: String(mtProductId),
       page: '1',
       page_size: '100',
-      turfed_locations_only: 'true',
     });
     if (inventory_location) {
       variantParams.append('inventory_location', String(inventory_location));
@@ -208,6 +239,18 @@ export async function getMTProductForAdd(req: Request, res: Response) {
     console.log(`[getMTProductForAdd] Fetching variants for product ${mtProductId}`);
     console.log(`[getMTProductForAdd] Variant URL: ${variantUrl}`);
     console.log(`[getMTProductForAdd] Variant params:`, Object.fromEntries(variantParams.entries()));
+    
+    // Enhanced authentication logging
+    const accessToken = sessionData.session.accessToken;
+    const tokenPreview = accessToken 
+      ? `${accessToken.substring(0, 10)}...${accessToken.substring(accessToken.length - 10)}`
+      : 'NO TOKEN';
+    console.log(`[getMTProductForAdd] Authentication details:`, {
+      audience: 'admin',
+      hasToken: !!accessToken,
+      tokenPreview,
+      mtSubdomain: sessionData.tenant.mtSubdomain,
+    });
 
     const variantsResponse = await proxyToMarianatek(variantUrl, {
       mtSubdomain: sessionData.tenant.mtSubdomain,
@@ -216,11 +259,14 @@ export async function getMTProductForAdd(req: Request, res: Response) {
     });
 
     console.log(`[getMTProductForAdd] Variant response status: ${variantsResponse.status} ${variantsResponse.statusText}`);
-
+    
+    // Read response body once - it can only be consumed once
+    const responseText = await variantsResponse.text().catch(() => 'Unknown error');
+    
     let variantsData: { data: any[] } = { data: [] };
+    
     if (variantsResponse.ok) {
       try {
-        const responseText = await variantsResponse.text();
         console.log(`[getMTProductForAdd] Variant response body (first 500 chars):`, responseText.substring(0, 500));
         
         const parsed = JSON.parse(responseText);
@@ -262,13 +308,24 @@ export async function getMTProductForAdd(req: Request, res: Response) {
         variantsData = { data: [] };
       }
     } else {
-      const errorText = await variantsResponse.text().catch(() => 'Unknown error');
-      console.error(`[getMTProductForAdd] Failed to fetch variants for product ${mtProductId}:`, {
-        status: variantsResponse.status,
-        statusText: variantsResponse.statusText,
-        error: errorText.substring(0, 500),
-        url: variantUrl,
-      });
+      // Enhanced error logging for authentication issues
+      if (variantsResponse.status === 401 || variantsResponse.status === 403) {
+        console.error(`[getMTProductForAdd] Authentication error (${variantsResponse.status}):`, {
+          status: variantsResponse.status,
+          statusText: variantsResponse.statusText,
+          error: responseText.substring(0, 500),
+          url: variantUrl,
+          tokenPreview,
+          audience: 'admin',
+        });
+      } else {
+        console.error(`[getMTProductForAdd] Failed to fetch variants for product ${mtProductId}:`, {
+          status: variantsResponse.status,
+          statusText: variantsResponse.statusText,
+          error: responseText.substring(0, 500),
+          url: variantUrl,
+        });
+      }
     }
 
     res.json({
@@ -332,7 +389,6 @@ export async function postTenantProduct(req: Request, res: Response) {
       parent: String(mtProductId),
       page: '1',
       page_size: '100',
-      turfed_locations_only: 'true',
     });
 
     const variantsResponse = await proxyToMarianatek(`product_variants?${variantParams.toString()}`, {
@@ -739,7 +795,6 @@ export async function getProductVariants(req: Request, res: Response) {
           const params = new URLSearchParams({});
           if (inventory_location) {
             params.append('inventory_location', String(inventory_location));
-            params.append('turfed_locations_only', 'true');
           }
 
           const mtResponse = await proxyToMarianatek(`product_variants/${variant.mtVariantId}?${params.toString()}`, {
@@ -818,7 +873,6 @@ export async function getProductVariant(req: Request, res: Response) {
     const params = new URLSearchParams({});
     if (inventory_location) {
       params.append('inventory_location', String(inventory_location));
-      params.append('turfed_locations_only', 'true');
     }
 
     const mtResponse = await proxyToMarianatek(`product_variants/${variant.mtVariantId}?${params.toString()}`, {
@@ -1042,7 +1096,6 @@ export async function syncProducts(req: Request, res: Response) {
           parent: String(product.mtProductId),
           page: '1',
           page_size: '100',
-          turfed_locations_only: 'true',
         });
 
         const variantsResponse = await proxyToMarianatek(`product_variants?${variantParams.toString()}`, {

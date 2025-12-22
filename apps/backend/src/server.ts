@@ -27,6 +27,7 @@ import {
   getProductVariant,
   putProductVariant,
   syncProducts,
+  checkProductExists,
 } from './routes/products';
 import { getMe } from './routes/me';
 import { getTenantInfo } from './routes/tenantInfo';
@@ -69,6 +70,7 @@ app.delete('/admin/:tenant/banners/:id', deleteTenantBanner);
 // Product routes
 app.get('/admin/:tenant/products', getAdminTenantProducts);
 app.get('/admin/:tenant/products/mt/search', searchMTProducts);
+app.get('/admin/:tenant/products/check/:mtProductId', checkProductExists);
 app.get('/admin/:tenant/products/add', getMTProductForAdd);
 app.post('/admin/:tenant/products', uploadProductImages, handleMulterError, postTenantProduct);
 app.get('/admin/:tenant/products/:id', getTenantProduct);
