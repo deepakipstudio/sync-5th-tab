@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Banners</h1>
-        <p class="text-sm text-gray-500 mt-1">Manage promotional banners for your shop</p>
+        <h1 class="text-2xl font-semibold text-admin-text-primary">Banners</h1>
+        <p class="text-sm text-admin-text-secondary mt-1">Manage promotional banners for your shop</p>
       </div>
       <button
         @click="openCreateModal"
-        class="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+        class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -23,22 +23,22 @@
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
       {{ error }}
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="banners.length === 0" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
-      <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div v-else-if="banners.length === 0" class="bg-admin-surface-base rounded-lg border border-admin-border p-12 text-center">
+      <div class="mx-auto w-16 h-16 bg-admin-surface-raised rounded-full flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       </div>
-      <h3 class="text-lg font-medium text-gray-900 mb-1">No banners yet</h3>
-      <p class="text-gray-500 mb-4">Get started by creating your first promotional banner.</p>
+      <h3 class="text-lg font-medium text-admin-text-primary mb-1">No banners yet</h3>
+      <p class="text-admin-text-secondary mb-4">Get started by creating your first promotional banner.</p>
       <button
         @click="openCreateModal"
-        class="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+        class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -52,10 +52,10 @@
       <div
         v-for="banner in banners"
         :key="banner.id"
-        class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+        class="bg-admin-surface-base rounded-lg border border-admin-border overflow-hidden hover:shadow-md transition-shadow"
       >
         <!-- Image Preview -->
-        <div class="aspect-[16/9] bg-gray-100 relative">
+        <div class="aspect-[16/9] bg-admin-surface-raised relative">
           <img
             v-if="banner.imageUrl"
             :src="getFullImageUrl(banner.imageUrl)"
@@ -74,15 +74,15 @@
               :class="[
                 'text-xs font-medium px-2 py-0.5 rounded-full',
                 banner.visible
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-gray-100 text-gray-600'
+                  ? 'bg-admin-state-success-soft text-admin-state-success-text'
+                  : 'bg-admin-surface-raised text-admin-text-secondary'
               ]"
             >
               {{ banner.visible ? 'Visible' : 'Hidden' }}
             </span>
             <span
               v-if="isExpired(banner.expiresAt)"
-              class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700"
+              class="text-xs font-medium px-2 py-0.5 rounded-full bg-admin-state-warning-soft text-admin-state-warning-text"
             >
               Expired
             </span>
@@ -91,18 +91,18 @@
 
         <!-- Details -->
         <div class="p-4">
-          <div class="text-sm text-gray-600 space-y-1 mb-3">
+          <div class="text-sm text-admin-text-secondary space-y-1 mb-3">
             <p v-if="banner.collectionId">
-              <span class="text-gray-400">Collection:</span> {{ banner.collectionId }}
+              <span class="text-admin-text-muted">Collection:</span> {{ banner.collectionId }}
             </p>
             <p v-if="banner.productClass">
-              <span class="text-gray-400">Product Class:</span> {{ banner.productClass }}
+              <span class="text-admin-text-muted">Product Class:</span> {{ banner.productClass }}
             </p>
             <p v-if="banner.expiresAt">
-              <span class="text-gray-400">Expires:</span> {{ formatDate(banner.expiresAt) }}
+              <span class="text-admin-text-muted">Expires:</span> {{ formatDate(banner.expiresAt) }}
             </p>
             <p v-if="banner.sortOrder !== null">
-              <span class="text-gray-400">Sort Order:</span> {{ banner.sortOrder }}
+              <span class="text-admin-text-muted">Sort Order:</span> {{ banner.sortOrder }}
             </p>
           </div>
 
@@ -110,13 +110,13 @@
           <div class="flex gap-2 pt-3 border-t border-gray-100">
             <button
               @click="openEditModal(banner)"
-              class="flex-1 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition-colors"
+              class="flex-1 text-sm text-admin-text-primary bg-admin-surface-raised hover:bg-admin-surface-raised px-3 py-1.5 rounded transition-colors"
             >
               Edit
             </button>
             <button
               @click="confirmDelete(banner)"
-              class="text-sm text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded transition-colors"
+              class="text-sm text-admin-state-danger-text bg-admin-state-danger-soft hover:bg-admin-state-danger-soft px-3 py-1.5 rounded transition-colors"
             >
               Delete
             </button>
@@ -132,9 +132,9 @@
         class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
         @click.self="closeModal"
       >
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">
+        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div class="px-6 py-4 border-b border-admin-border">
+            <h2 class="text-lg font-semibold text-admin-text-primary">
               {{ editingBanner ? 'Edit Banner' : 'Create Banner' }}
             </h2>
           </div>
@@ -142,7 +142,7 @@
           <form @submit.prevent="saveBanner" class="p-6 space-y-4">
             <!-- Image Upload -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
+              <label class="block text-sm font-medium text-admin-text-primary mb-1">
                 Banner Image <span v-if="!editingBanner" class="text-red-500">*</span>
               </label>
               
@@ -155,8 +155,8 @@
                 :class="[
                   'relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors',
                   isDragging 
-                    ? 'border-gray-900 bg-gray-50' 
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-gray-900 bg-admin-surface-raised' 
+                    : 'border-admin-border hover:border-admin-border-strong'
                 ]"
               >
                 <input
@@ -174,32 +174,32 @@
                     alt="Preview"
                     class="mx-auto max-h-40 rounded-lg object-contain"
                   />
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-admin-text-secondary">
                     {{ selectedFile?.name || 'Current image' }}
-                    <span v-if="selectedFile" class="text-gray-400">
+                    <span v-if="selectedFile" class="text-admin-text-muted">
                       ({{ formatFileSize(selectedFile.size) }})
                     </span>
                   </p>
                   <button
                     type="button"
                     @click.stop="clearImage"
-                    class="text-sm text-red-600 hover:text-red-700"
+                    class="text-sm text-admin-state-danger-text hover:text-admin-state-danger-text"
                   >
                     Remove
                   </button>
                 </div>
                 <div v-else class="space-y-2">
-                  <svg class="mx-auto w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="mx-auto w-12 h-12 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p class="text-sm text-gray-600">
-                    <span class="font-medium text-gray-900">Click to upload</span> or drag and drop
+                  <p class="text-sm text-admin-text-secondary">
+                    <span class="font-medium text-admin-text-primary">Click to upload</span> or drag and drop
                   </p>
                 </div>
               </div>
               
               <!-- Guidelines -->
-              <div class="mt-2 text-xs text-gray-500 space-y-0.5">
+              <div class="mt-2 text-xs text-admin-text-secondary space-y-0.5">
                 <p>Recommended size: 1920 x 640 pixels (3:1 aspect ratio)</p>
                 <p>Maximum file size: 2MB</p>
                 <p>Supported formats: JPG, PNG, WebP, GIF</p>
@@ -208,52 +208,52 @@
 
             <!-- Collection ID -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
+              <label class="block text-sm font-medium text-admin-text-primary mb-1">
                 Collection ID
               </label>
               <input
                 v-model.number="form.collectionId"
                 type="number"
                 placeholder="Optional - Link to a product collection"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
             <!-- Product Class -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
+              <label class="block text-sm font-medium text-admin-text-primary mb-1">
                 Product Class
               </label>
               <input
                 v-model="form.productClass"
                 type="text"
                 placeholder="Optional - e.g. membership, retail"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
             <!-- Expires At -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
+              <label class="block text-sm font-medium text-admin-text-primary mb-1">
                 Expiration Date
               </label>
               <input
                 v-model="form.expiresAt"
                 type="datetime-local"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
             <!-- Sort Order -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
+              <label class="block text-sm font-medium text-admin-text-primary mb-1">
                 Sort Order
               </label>
               <input
                 v-model.number="form.sortOrder"
                 type="number"
                 placeholder="Lower numbers appear first"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
@@ -263,24 +263,24 @@
                 type="button"
                 @click="form.visible = !form.visible"
                 :class="[
-                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2',
-                  form.visible ? 'bg-gray-900' : 'bg-gray-200'
+                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-admin-brand-strong focus:ring-offset-2',
+                  form.visible ? 'bg-admin-brand-strong' : 'bg-admin-surface-raised'
                 ]"
               >
                 <span
                   :class="[
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-admin-surface-base shadow ring-0 transition duration-200 ease-in-out',
                     form.visible ? 'translate-x-5' : 'translate-x-0'
                   ]"
                 />
               </button>
-              <label class="text-sm font-medium text-gray-700">
+              <label class="text-sm font-medium text-admin-text-primary">
                 {{ form.visible ? 'Visible to customers' : 'Hidden from customers' }}
               </label>
             </div>
 
             <!-- Form Error -->
-            <div v-if="formError" class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+            <div v-if="formError" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-3 text-admin-state-danger-text text-sm">
               {{ formError }}
             </div>
 
@@ -289,14 +289,14 @@
               <button
                 type="button"
                 @click="closeModal"
-                class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 :disabled="saving"
-                class="flex-1 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex-1 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ saving ? 'Saving...' : (editingBanner ? 'Update' : 'Create') }}
               </button>
@@ -313,28 +313,28 @@
         class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
         @click.self="showDeleteModal = false"
       >
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-md">
           <div class="p-6">
-            <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="mx-auto w-12 h-12 bg-admin-state-danger-soft rounded-full flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-admin-state-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">Delete Banner</h3>
-            <p class="text-gray-500 text-center mb-6">
+            <h3 class="text-lg font-semibold text-admin-text-primary text-center mb-2">Delete Banner</h3>
+            <p class="text-admin-text-secondary text-center mb-6">
               Are you sure you want to delete this banner? This action cannot be undone.
             </p>
             <div class="flex gap-3">
               <button
                 @click="showDeleteModal = false"
-                class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
               >
                 Cancel
               </button>
               <button
                 @click="deleteBanner"
                 :disabled="deleting"
-                class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                class="flex-1 bg-admin-state-danger-text text-admin-text-inverse px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {{ deleting ? 'Deleting...' : 'Delete' }}
               </button>
@@ -358,7 +358,7 @@
           v-if="toast.show"
           :class="[
             'fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50',
-            toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+            toast.type === 'success' ? 'bg-admin-state-success-text text-admin-text-inverse' : 'bg-admin-state-danger-text text-admin-text-inverse'
           ]"
         >
           <svg v-if="toast.type === 'success'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,15 +4,15 @@
     <div class="flex items-center gap-4">
       <button
         @click="navigateTo(`/admin/${route.params.tenant}/products/edit/${route.params.productId}`)"
-        class="text-gray-600 hover:text-gray-900"
+        class="text-admin-text-secondary hover:text-admin-text-primary"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Edit Variant</h1>
-        <p class="text-sm text-gray-500 mt-1">SKU: {{ variant?.sku || 'N/A' }}</p>
+        <h1 class="text-2xl font-semibold text-admin-text-primary">Edit Variant</h1>
+        <p class="text-sm text-admin-text-secondary mt-1">SKU: {{ variant?.sku || 'N/A' }}</p>
       </div>
     </div>
 
@@ -22,23 +22,23 @@
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
       {{ error }}
     </div>
 
     <!-- Form -->
     <form v-else @submit.prevent="saveVariant" class="space-y-6">
       <!-- Variant Images -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Variant Images</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Variant Images</h2>
         
         <!-- Image Upload Area -->
         <div
-          class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
+          class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-admin-border border-dashed rounded-md"
           @dragover.prevent="handleDragOver"
           @dragleave.prevent="handleDragLeave"
           @drop.prevent="handleDrop"
-          :class="{ 'border-gray-900 bg-gray-50': isDragging }"
+          :class="{ 'border-gray-900 bg-admin-surface-raised': isDragging }"
         >
           <div class="space-y-1 text-center">
             <svg
@@ -54,8 +54,8 @@
                 stroke-linejoin="round"
               />
             </svg>
-            <div class="flex text-sm text-gray-600">
-              <label class="relative cursor-pointer rounded-md font-medium text-gray-900 hover:text-gray-700">
+            <div class="flex text-sm text-admin-text-secondary">
+              <label class="relative cursor-pointer rounded-md font-medium text-admin-text-primary hover:text-admin-text-primary">
                 <span>Upload images</span>
                 <input
                   ref="fileInput"
@@ -68,7 +68,7 @@
               </label>
               <p class="pl-1">or drag and drop</p>
             </div>
-            <p class="text-xs text-gray-500">PNG, JPG, GIF, WebP up to 2MB each</p>
+            <p class="text-xs text-admin-text-secondary">PNG, JPG, GIF, WebP up to 2MB each</p>
           </div>
         </div>
 
@@ -79,7 +79,7 @@
             :key="img.id"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-gray-200'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-admin-border'">
               <img
                 :src="getFullImageUrl(img.imageUrl)"
                 :alt="`Variant image`"
@@ -89,7 +89,7 @@
             <button
               type="button"
               @click="markImageForDeletion(img.id)"
-              class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -99,7 +99,7 @@
               type="button"
               @click="setFeaturedExistingImage(img.id)"
               class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'"
+              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
             </button>
@@ -113,7 +113,7 @@
             :key="`new-${index}`"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-gray-200'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-admin-border'">
               <img
                 :src="img.preview"
                 :alt="`New image ${index + 1}`"
@@ -123,7 +123,7 @@
             <button
               type="button"
               @click="removeNewImage(index)"
-              class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -133,7 +133,7 @@
               type="button"
               @click="setFeaturedNewImage(index)"
               class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'"
+              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
             </button>
@@ -142,36 +142,36 @@
       </div>
 
       <!-- Variant Description -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Variant Description</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Variant Description</h2>
         <textarea
           v-model="form.description"
           rows="4"
           placeholder="Enter variant description..."
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+          class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
         />
       </div>
 
       <!-- MT Data (Read-only) -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Pricing & Stock (from Marianatek)</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Pricing & Stock (from Marianatek)</h2>
         
         <div v-if="variant?.mtData" class="space-y-4">
           <!-- Base Price -->
           <div>
-            <span class="text-sm font-medium text-gray-700">Base Price:</span>
-            <span class="text-lg text-gray-900 ml-2">${{ variant.mtData.attributes?.price || '0.00' }}</span>
-            <span class="text-sm text-gray-500 ml-1">(All locations)</span>
+            <span class="text-sm font-medium text-admin-text-primary">Base Price:</span>
+            <span class="text-lg text-admin-text-primary ml-2">${{ variant.mtData.attributes?.price || '0.00' }}</span>
+            <span class="text-sm text-admin-text-secondary ml-1">(All locations)</span>
           </div>
 
           <!-- Variant Attributes -->
           <div v-if="variant.mtData.attributes?.variant_attributes?.length > 0">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Attributes</h3>
+            <h3 class="text-sm font-medium text-admin-text-primary mb-2">Attributes</h3>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="attr in variant.mtData.attributes.variant_attributes"
                 :key="attr.code"
-                class="text-sm px-3 py-1 bg-gray-100 text-gray-700 rounded"
+                class="text-sm px-3 py-1 bg-admin-surface-raised text-admin-text-primary rounded"
               >
                 {{ attr.name }}: {{ attr.value || 'N/A' }}
               </span>
@@ -180,22 +180,22 @@
 
           <!-- Location Overrides -->
           <div v-if="variant.mtData.attributes?.region_overrides?.length > 0">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Location Pricing & Stock</h3>
+            <h3 class="text-sm font-medium text-admin-text-primary mb-2">Location Pricing & Stock</h3>
             <div class="space-y-3">
               <div
                 v-for="region in variant.mtData.attributes.region_overrides"
                 :key="region.id"
-                class="pl-4 border-l-2 border-gray-200"
+                class="pl-4 border-l-2 border-admin-border"
               >
-                <div class="font-medium text-gray-900 mb-2">{{ region.name }}</div>
+                <div class="font-medium text-admin-text-primary mb-2">{{ region.name }}</div>
                 <div class="space-y-2">
                   <div
                     v-for="location in region.location_overrides"
                     :key="location.id"
-                    class="text-sm bg-gray-50 p-2 rounded"
+                    class="text-sm bg-admin-surface-raised p-2 rounded"
                   >
-                    <div class="font-medium text-gray-900">{{ location.name }}</div>
-                    <div class="text-gray-600">
+                    <div class="font-medium text-admin-text-primary">{{ location.name }}</div>
+                    <div class="text-admin-text-secondary">
                       Price: ${{ location.price }} | Stock: {{ location.present_quantity ?? 'N/A' }}
                     </div>
                   </div>
@@ -204,13 +204,13 @@
             </div>
           </div>
         </div>
-        <div v-else class="text-sm text-gray-500">
+        <div v-else class="text-sm text-admin-text-secondary">
           Loading pricing data...
         </div>
       </div>
 
       <!-- Form Error -->
-      <div v-if="formError" class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+      <div v-if="formError" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
         {{ formError }}
       </div>
 
@@ -219,14 +219,14 @@
         <button
           type="button"
           @click="navigateTo(`/admin/${route.params.tenant}/products/edit/${route.params.productId}`)"
-          class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+          class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           :disabled="saving"
-          class="flex-1 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex-1 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save Changes' }}
         </button>

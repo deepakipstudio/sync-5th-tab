@@ -6,7 +6,7 @@
       <div v-if="loading" class="animate-pulse">
         <p>Redirecting to Marianatek...</p>
       </div>
-      <div v-else-if="error" class="text-red-600">
+      <div v-else-if="error" class="text-admin-state-danger-text">
         <p>{{ error }}</p>
       </div>
     </div>

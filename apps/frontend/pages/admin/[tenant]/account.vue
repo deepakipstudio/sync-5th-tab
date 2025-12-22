@@ -4,28 +4,28 @@
       <h1 class="text-2xl font-semibold">Account</h1>
       <NuxtLink
         :to="`/admin/${tenantId}`"
-        class="text-gray-600 hover:text-gray-900"
+        class="text-admin-text-secondary hover:text-admin-text-primary"
       >
         ← Back to Dashboard
       </NuxtLink>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="bg-white p-6 rounded-lg shadow">
+    <div v-if="loading" class="bg-admin-surface-base p-6 rounded-lg shadow">
       <div class="animate-pulse space-y-4">
-        <div class="h-4 bg-gray-200 rounded w-1/4"></div>
-        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-        <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+        <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
+        <div class="h-4 bg-admin-surface-raised rounded w-1/2"></div>
+        <div class="h-4 bg-admin-surface-raised rounded w-1/3"></div>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg">
+    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border text-admin-state-danger-text p-6 rounded-lg">
       <p class="font-medium">Failed to load account information</p>
       <p class="text-sm mt-1">{{ error }}</p>
       <button
         @click="fetchAccount"
-        class="mt-4 bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700"
+        class="mt-4 bg-admin-state-danger-text text-white px-4 py-2 rounded text-sm hover:opacity-90"
       >
         Try Again
       </button>
@@ -34,58 +34,58 @@
     <!-- Account Info -->
     <div v-else-if="account" class="space-y-6">
       <!-- Tenant Info -->
-      <div class="bg-white p-6 rounded-lg shadow">
-        <h2 class="text-lg font-medium mb-6 text-gray-900">Tenant Information</h2>
+      <div class="bg-admin-surface-base p-6 rounded-lg shadow">
+        <h2 class="text-lg font-medium mb-6 text-admin-text-primary">Tenant Information</h2>
         
         <dl class="space-y-4">
-          <div class="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
-            <dt class="text-sm font-medium text-gray-500">Name</dt>
-            <dd class="text-sm text-gray-900 col-span-2">{{ account.tenant?.name || '—' }}</dd>
+          <div class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <dt class="text-sm font-medium text-admin-text-secondary">Name</dt>
+            <dd class="text-sm text-admin-text-primary col-span-2">{{ account.tenant?.name || '—' }}</dd>
           </div>
 
-          <div class="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
-            <dt class="text-sm font-medium text-gray-500">MT Subdomain</dt>
-            <dd class="text-sm text-gray-900 col-span-2">
-              <code class="bg-gray-100 px-2 py-1 rounded text-sm">{{ account.tenant?.mtSubdomain || '—' }}</code>
+          <div class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <dt class="text-sm font-medium text-admin-text-secondary">MT Subdomain</dt>
+            <dd class="text-sm text-admin-text-primary col-span-2">
+              <code class="bg-admin-surface-raised px-2 py-1 rounded text-sm">{{ account.tenant?.mtSubdomain || '—' }}</code>
             </dd>
           </div>
 
-          <div v-if="account.mtTenant?.email" class="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
-            <dt class="text-sm font-medium text-gray-500">Email</dt>
-            <dd class="text-sm text-gray-900 col-span-2">{{ account.mtTenant.email }}</dd>
+          <div v-if="account.mtTenant?.email" class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <dt class="text-sm font-medium text-admin-text-secondary">Email</dt>
+            <dd class="text-sm text-admin-text-primary col-span-2">{{ account.mtTenant.email }}</dd>
           </div>
 
-          <div v-if="account.mtTenant?.phone" class="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
-            <dt class="text-sm font-medium text-gray-500">Phone</dt>
-            <dd class="text-sm text-gray-900 col-span-2">{{ account.mtTenant.phone }}</dd>
+          <div v-if="account.mtTenant?.phone" class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <dt class="text-sm font-medium text-admin-text-secondary">Phone</dt>
+            <dd class="text-sm text-admin-text-primary col-span-2">{{ account.mtTenant.phone }}</dd>
           </div>
 
-          <div v-if="account.mtTenant?.timezone" class="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
-            <dt class="text-sm font-medium text-gray-500">Timezone</dt>
-            <dd class="text-sm text-gray-900 col-span-2">{{ account.mtTenant.timezone }}</dd>
+          <div v-if="account.mtTenant?.timezone" class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <dt class="text-sm font-medium text-admin-text-secondary">Timezone</dt>
+            <dd class="text-sm text-admin-text-primary col-span-2">{{ account.mtTenant.timezone }}</dd>
           </div>
 
-          <div v-if="account.mtTenant?.currency" class="grid grid-cols-3 gap-4 py-3 border-b border-gray-100">
-            <dt class="text-sm font-medium text-gray-500">Currency</dt>
-            <dd class="text-sm text-gray-900 col-span-2">{{ account.mtTenant.currency }}</dd>
+          <div v-if="account.mtTenant?.currency" class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
+            <dt class="text-sm font-medium text-admin-text-secondary">Currency</dt>
+            <dd class="text-sm text-admin-text-primary col-span-2">{{ account.mtTenant.currency }}</dd>
           </div>
 
           <div class="grid grid-cols-3 gap-4 py-3">
-            <dt class="text-sm font-medium text-gray-500">Tenant ID</dt>
-            <dd class="text-sm text-gray-900 col-span-2 font-mono">{{ account.tenant?.id || '—' }}</dd>
+            <dt class="text-sm font-medium text-admin-text-secondary">Tenant ID</dt>
+            <dd class="text-sm text-admin-text-primary col-span-2 font-mono">{{ account.tenant?.id || '—' }}</dd>
           </div>
         </dl>
       </div>
 
       <!-- Session Info -->
-      <div class="bg-white p-6 rounded-lg shadow">
-        <h2 class="text-lg font-medium mb-6 text-gray-900">Session</h2>
+      <div class="bg-admin-surface-base p-6 rounded-lg shadow">
+        <h2 class="text-lg font-medium mb-6 text-admin-text-primary">Session</h2>
         
         <dl class="space-y-4">
           <div class="grid grid-cols-3 gap-4 py-3">
-            <dt class="text-sm font-medium text-gray-500">Role</dt>
+            <dt class="text-sm font-medium text-admin-text-secondary">Role</dt>
             <dd class="text-sm col-span-2">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-admin-brand-soft text-admin-brand-strong">
                 {{ account.role }}
               </span>
             </dd>
