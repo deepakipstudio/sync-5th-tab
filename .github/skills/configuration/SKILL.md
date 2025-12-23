@@ -23,6 +23,16 @@ SESSION_MAX_AGE_SECONDS=86400
 NODE_ENV=development
 ```
 
+### Frontend Variables
+
+```bash
+# Backend URL
+NUXT_PUBLIC_BACKEND_URL=http://localhost:4000
+
+# Admin cache feature flag (default: enabled)
+NUXT_PUBLIC_ADMIN_CACHE_ENABLED=true  # or false to disable
+```
+
 ### Validation
 
 ```typescript
@@ -94,7 +104,8 @@ const { adminApi } = getMTApiURLs(tenant.mtSubdomain)
 export default defineNuxtConfig({
   runtimeConfig: {
     public: {
-      backendUrl: process.env.NUXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
+      backendUrl: process.env.NUXT_PUBLIC_BACKEND_URL || 'http://localhost:4000',
+      adminCacheEnabled: process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== 'false' && process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== '0' && process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== ''
     }
   }
 })
@@ -107,10 +118,14 @@ const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
 ```
 
-### Environment Variable
+### Environment Variables
 
 ```bash
+# Backend URL
 NUXT_PUBLIC_BACKEND_URL=http://localhost:4000
+
+# Admin cache (optional, defaults to enabled)
+NUXT_PUBLIC_ADMIN_CACHE_ENABLED=true  # Set to 'false' to disable caching
 ```
 
 ## File Locations
@@ -126,4 +141,6 @@ NUXT_PUBLIC_BACKEND_URL=http://localhost:4000
 - Build URLs from tenant `mtSubdomain` at runtime
 - Frontend config: use `NUXT_PUBLIC_*` prefix for client access
 - Fail fast on invalid configuration
+- Admin caching: controlled via `NUXT_PUBLIC_ADMIN_CACHE_ENABLED` (see `.github/skills/caching/SKILL.md`)
+
 

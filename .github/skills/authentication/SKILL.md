@@ -140,3 +140,4 @@ if (authStatus.value === 'unauthenticated') {
 - Check role before admin operations
 - Tokens never sent to frontend
 
+
