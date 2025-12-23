@@ -19,6 +19,26 @@
 
     <!-- Quick Actions Grid -->
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- Products Card -->
+      <NuxtLink
+        :to="`/admin/${tenantId}/products`"
+        class="bg-admin-surface-base rounded-lg border border-admin-border p-6 hover:shadow-md hover:border-admin-border-strong transition-all group"
+      >
+        <div class="w-12 h-12 bg-admin-brand-soft rounded-lg flex items-center justify-center mb-4 group-hover:bg-admin-brand-subtle transition-colors">
+          <svg class="w-6 h-6 text-admin-brand-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-admin-text-primary mb-1">Products</h3>
+        <p class="text-sm text-admin-text-secondary">Manage products and inventory</p>
+        <div class="mt-4 text-sm font-medium text-admin-brand-strong group-hover:text-admin-brand-strong flex items-center gap-1">
+          Manage products
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </NuxtLink>
+
       <!-- Store Settings Card -->
       <NuxtLink
         :to="`/admin/${tenantId}/store-settings#banners`"
@@ -54,26 +74,6 @@
         <p class="text-sm text-admin-text-secondary">View your account details and settings</p>
         <div class="mt-4 text-sm font-medium text-admin-brand-strong group-hover:text-admin-brand-strong flex items-center gap-1">
           View account
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      </NuxtLink>
-
-      <!-- Products Card -->
-      <NuxtLink
-        :to="`/admin/${tenantId}/products`"
-        class="bg-admin-surface-base rounded-lg border border-admin-border p-6 hover:shadow-md hover:border-admin-border-strong transition-all group"
-      >
-        <div class="w-12 h-12 bg-admin-brand-soft rounded-lg flex items-center justify-center mb-4 group-hover:bg-admin-brand-subtle transition-colors">
-          <svg class="w-6 h-6 text-admin-brand-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-        </div>
-        <h3 class="text-lg font-medium text-admin-text-primary mb-1">Products</h3>
-        <p class="text-sm text-admin-text-secondary">Manage products and inventory</p>
-        <div class="mt-4 text-sm font-medium text-admin-brand-strong group-hover:text-admin-brand-strong flex items-center gap-1">
-          Manage products
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
