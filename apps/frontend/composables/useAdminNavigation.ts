@@ -37,14 +37,15 @@ export function useAdminNavigation() {
 
   /**
    * Navigate to edit product page with optional product data
+   * Now uses MT product ID instead of database UUID
    */
-  function navigateToProductEdit(productId: string, productData?: {
-    mtProductId?: string
+  function navigateToProductEdit(mtProductId: string, productData?: {
     productName?: string
+    productDescription?: string
     [key: string]: any
   }) {
     const tenantId = route.params.tenant as string
-    const url = `/admin/${tenantId}/products/edit/${productId}`
+    const url = `/admin/${tenantId}/products/edit/${mtProductId}`
     
     if (productData && typeof window !== 'undefined') {
       // Store product data in sessionStorage before navigation

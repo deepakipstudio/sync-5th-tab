@@ -321,17 +321,40 @@
               <div
                 v-for="product in products"
                 :key="product.id"
-                class="flex items-center gap-2 p-3 border border-admin-border rounded-lg"
+                class="flex items-center gap-3 p-3 border border-admin-border rounded-lg"
               >
-                <input
-                  type="checkbox"
-                  :checked="selectedProducts.includes(product.id)"
-                  @change="toggleProduct(product.id)"
-                  class="rounded border-admin-border text-admin-brand-strong focus:ring-admin-brand-strong"
-                />
-                <label class="flex-1 text-sm text-admin-text-primary cursor-pointer">
-                  Product #{{ product.mtProductId }} ({{ product.variants?.length || 0 }} variants)
-                </label>
+                <!-- Image Thumbnail -->
+                <div class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-admin-surface-raised border border-admin-border flex items-center justify-center">
+                  <img
+                    v-if="getFeaturedImage(product)"
+                    :src="getFullImageUrl(getFeaturedImage(product)!.imageUrl)"
+                    :alt="`${product.mtProductName || 'Product'} image`"
+                    class="w-full h-full object-cover"
+                    @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                  />
+                  <svg
+                    v-else
+                    class="w-6 h-6 text-admin-text-muted"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+                
+                <!-- Checkbox + Product Info -->
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <input
+                    type="checkbox"
+                    :checked="selectedProducts.includes(product.id)"
+                    @change="toggleProduct(product.id)"
+                    class="rounded border-admin-border text-admin-brand-strong focus:ring-admin-brand-strong flex-shrink-0"
+                  />
+                  <label class="flex-1 text-sm text-admin-text-primary cursor-pointer">
+                    {{ product.mtProductName || 'Product' }} ({{ product.mtProductId }}) ({{ product.variants?.length || 0 }} variants)
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -552,13 +575,13 @@ async function selectMTProduct(product: any) {
 
     if (checkResponse.exists && checkResponse.productId) {
       // Product exists, navigate to edit page with product data
+      // Use MT product ID (product.id) instead of database UUID
       const productData = {
-        mtProductId: product.id,
         productName: product.attributes?.title,
         productDescription: product.attributes?.description,
       }
       setRouteState(productData)
-      navigateToProductEdit(checkResponse.productId, productData)
+      navigateToProductEdit(product.id, productData)
     } else {
       // Product doesn't exist, navigate to add page with product data
       navigateToProductAdd({
@@ -670,16 +693,17 @@ function handleProductCardClick(productId: string, event: Event) {
   const product = products.value.find(p => p.id === productId)
   const { navigateToProductEdit, setRouteState } = useAdminNavigation()
   
-  if (product) {
+  if (product && product.mtProductId) {
+    // Use MT product ID instead of database UUID
     const productData = {
-      mtProductId: product.mtProductId,
       productName: product.mtProductName,
       productDescription: product.description,
     }
     setRouteState(productData)
-    navigateToProductEdit(productId, productData)
-  } else {
-    navigateToProductEdit(productId)
+    navigateToProductEdit(product.mtProductId, productData)
+  } else if (product) {
+    // Fallback if mtProductId is missing (shouldn't happen, but be safe)
+    console.warn('Product missing mtProductId, cannot navigate to edit page')
   }
 }
 

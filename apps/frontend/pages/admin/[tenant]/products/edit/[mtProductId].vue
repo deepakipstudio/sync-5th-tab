@@ -399,12 +399,13 @@ const routeState = getRouteState<{
 
 // Try to get product from products list cache first
 const tenantId = route.params.tenant as string
-const productId = route.params.id as string
+const mtProductId = route.params.mtProductId as string // Changed from productId to mtProductId
 const productsCacheKey = `admin:products:${tenantId}`
 const cachedProducts = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(productsCacheKey)
 
 if (cachedProducts?.products) {
-  const cachedProduct = cachedProducts.products.find(p => p.id === productId)
+  // Look up by MT product ID instead of database UUID
+  const cachedProduct = cachedProducts.products.find(p => p.mtProductId === mtProductId)
   if (cachedProduct) {
     // Use cached product data immediately
     product.value = cachedProduct
@@ -418,7 +419,7 @@ if (cachedProducts?.products) {
 // Also check route state
 if (routeState && !product.value) {
   product.value = {
-    id: productId,
+    mtProductId: routeState.mtProductId || mtProductId,
     mtProductName: routeState.productName,
     description: routeState.productDescription,
   }
@@ -428,7 +429,8 @@ if (routeState && !product.value) {
 
 // Fetch product with cache-first strategy
 async function fetchProduct() {
-  const cacheKey = `admin:product:${tenantId}:${productId}`
+  // Use MT product ID for cache key
+  const cacheKey = `admin:product:${tenantId}:${mtProductId}`
   const ttl = 5 * 60 * 1000 // 5 minutes
 
   // Check cache first
@@ -452,7 +454,8 @@ async function fetchProduct() {
     const data = await fetchWithCache(
       cacheKey,
       async () => {
-        const response = await $fetch<{ product: any }>(`${backendUrl}/admin/${tenantId}/products/${productId}`, {
+        // Use new MT-based endpoint
+        const response = await $fetch<{ product: any }>(`${backendUrl}/admin/${tenantId}/products/mt/${mtProductId}`, {
           credentials: 'include',
         })
         return { product: response.product }
@@ -492,14 +495,41 @@ async function fetchProduct() {
 
 // Fetch variants with MT pricing/stock
 async function fetchVariants() {
-  try {
+  const cacheKey = `admin:product-variants:${tenantId}:${mtProductId}`
+  const ttl = 1 * 60 * 1000 // Shorter TTL for variants as stock/price can change
+
+  // Check cache first
+  const cached = useAdminCache().getCached<{ variants: any[] }>(cacheKey)
+  if (cached?.variants) {
+    variants.value = cached.variants
+    loadingVariants.value = false
+  } else {
     loadingVariants.value = true
-    const response = await $fetch<{ variants: any[] }>(`${backendUrl}/admin/${route.params.tenant}/products/${route.params.id}/variants`, {
-      credentials: 'include',
-    })
-    variants.value = response.variants || []
+  }
+
+  try {
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        // Use new MT-based variants endpoint
+        const response = await $fetch<{ variants: any[] }>(`${backendUrl}/admin/${tenantId}/products/mt/${mtProductId}/variants`, {
+          credentials: 'include',
+        })
+        return { variants: response.variants }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: { variants: any[] }) => {
+          variants.value = freshData.variants || []
+        },
+      }
+    )
+    variants.value = data.variants || []
   } catch (err: any) {
     console.error('Error fetching variants:', err)
+    if (!cached) {
+      variants.value = []
+    }
   } finally {
     loadingVariants.value = false
   }
@@ -626,14 +656,15 @@ async function saveProduct() {
       formData.append('featuredImageIndex', String(featuredIndex))
     }
 
-    await $fetch(`${backendUrl}/admin/${tenantId}/products/${productId}`, {
+    // Use new MT-based endpoint
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/mt/${mtProductId}`, {
       method: 'PUT',
       credentials: 'include',
       body: formData,
     })
 
-    // Invalidate caches
-    invalidate(`admin:product:${tenantId}:${productId}`)
+    // Invalidate caches - use MT product ID
+    invalidate(`admin:product:${tenantId}:${mtProductId}`)
     invalidate(`admin:products:${tenantId}`)
 
     // Refresh product data

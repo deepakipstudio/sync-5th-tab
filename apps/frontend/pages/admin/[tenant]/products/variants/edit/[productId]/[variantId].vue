@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center gap-4">
       <button
-        @click="navigateTo(`/admin/${route.params.tenant}/products/edit/${route.params.productId}`)"
+        @click="navigateTo(mtProductId ? `/admin/${route.params.tenant}/products/edit/${mtProductId}` : `/admin/${route.params.tenant}/products`)"
         class="text-admin-text-secondary hover:text-admin-text-primary"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -11,7 +11,7 @@
         </svg>
       </button>
       <div>
-        <h1 class="text-2xl font-semibold text-admin-text-primary">Edit Variant</h1>
+        <h1 class="text-2xl font-semibold text-admin-text-primary">{{ variantTitle }}</h1>
         <p class="text-sm text-admin-text-secondary mt-1">SKU: {{ variant?.sku || 'N/A' }}</p>
       </div>
     </div>
@@ -218,7 +218,7 @@
       <div class="flex gap-3">
         <button
           type="button"
-          @click="navigateTo(`/admin/${route.params.tenant}/products/edit/${route.params.productId}`)"
+          @click="navigateTo(mtProductId ? `/admin/${route.params.tenant}/products/edit/${mtProductId}` : `/admin/${route.params.tenant}/products`)"
           class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
         >
           Cancel
@@ -241,6 +241,7 @@ definePageMeta({ layout: 'admin' })
 const route = useRoute()
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
+const adminCache = useAdminCache()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -248,6 +249,49 @@ const saving = ref(false)
 const formError = ref<string | null>(null)
 
 const variant = ref<any>(null)
+const mtProductName = ref<string | null>(null)
+
+// Get product ID and variant ID from route params (UUIDs)
+const tenantId = route.params.tenant as string
+const productId = route.params.productId as string
+const variantId = route.params.variantId as string
+
+// Get MT product ID for navigation - try to get from variant's product relationship or cache
+const mtProductId = computed(() => {
+  // First, try to get from variant's product relationship
+  if (variant.value?.product?.mtProductId) {
+    return variant.value.product.mtProductId
+  }
+  
+  // Fallback: look up in products list cache using database UUID
+  const productsCacheKey = `admin:products:${tenantId}`
+  const cachedProducts = adminCache.getCached<{ products: any[] }>(productsCacheKey)
+  
+  if (cachedProducts?.products) {
+    const cachedProduct = cachedProducts.products.find(p => p.id === productId)
+    if (cachedProduct?.mtProductId) {
+      return cachedProduct.mtProductId
+    }
+  }
+  
+  // If we can't find it, return null (navigation will fail gracefully)
+  return null
+})
+
+// Variant title: "{Product Name} Variant: {Color Size}" or "{Product Name} Variant"
+const variantTitle = computed(() => {
+  const productName = mtProductName.value || 'Product'
+  // variant_attributes is an array like: [{name: "Color", value: null}, {name: "Size", value: "7"}]
+  // Filter out null/empty values and join with space
+  const attributes = variant.value?.mtData?.attributes?.variant_attributes || []
+  const attrValues = attributes
+    .map((attr: any) => attr.value)
+    .filter((value: any) => value !== null && value !== undefined && value !== '')
+    .join(' ')
+  return attrValues 
+    ? `${productName} Variant: ${attrValues}`
+    : `${productName} Variant`
+})
 
 const form = ref({
   description: '',
@@ -267,7 +311,7 @@ async function fetchVariant() {
     loading.value = true
     error.value = null
     
-    const response = await $fetch<{ variant: any }>(`${backendUrl}/admin/${route.params.tenant}/products/variants/${route.params.variantId}`, {
+    const response = await $fetch<{ variant: any }>(`${backendUrl}/admin/${tenantId}/products/variants/${variantId}`, {
       credentials: 'include',
     })
 
@@ -275,6 +319,21 @@ async function fetchVariant() {
     existingImages.value = response.variant.images || []
     form.value.description = response.variant.description || ''
     form.value.visible = response.variant.visible
+    
+    // Update product name from variant's product relationship
+    if (response.variant.product?.mtProductName) {
+      mtProductName.value = response.variant.product.mtProductName
+    } else if (response.variant.product?.mtProductId) {
+      // Try to get product name from cache
+      const productsCacheKey = `admin:products:${tenantId}`
+      const cachedProducts = adminCache.getCached<{ products: any[] }>(productsCacheKey)
+      if (cachedProducts?.products) {
+        const cachedProduct = cachedProducts.products.find(p => p.mtProductId === response.variant.product.mtProductId)
+        if (cachedProduct?.mtProductName) {
+          mtProductName.value = cachedProduct.mtProductName
+        }
+      }
+    }
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch variant'
   } finally {
@@ -385,11 +444,18 @@ async function saveVariant() {
       formData.append('featuredImageIndex', String(featuredIndex))
     }
 
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products/variants/${route.params.variantId}`, {
+    // Use UUID-based endpoint
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/variants/${variantId}`, {
       method: 'PUT',
       credentials: 'include',
       body: formData,
     })
+
+    // Invalidate caches
+    adminCache.invalidate(`admin:products:${tenantId}`)
+    if (mtProductId.value) {
+      adminCache.invalidate(`admin:product:${tenantId}:${mtProductId.value}`)
+    }
 
     // Refresh variant data
     await fetchVariant()

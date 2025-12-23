@@ -25,9 +25,15 @@ import {
   getTenantProduct,
   putTenantProduct,
   deleteTenantProduct,
+  getTenantProductByMtId,
+  putTenantProductByMtId,
+  deleteTenantProductByMtId,
   getProductVariants,
+  getProductVariantsByMtId,
   getProductVariant,
   putProductVariant,
+  getProductVariantByMtId,
+  putProductVariantByMtId,
   syncProducts,
   checkProductExists,
 } from './routes/products';
@@ -80,6 +86,14 @@ app.get('/admin/:tenant/products/mt/search', searchMTProducts);
 app.get('/admin/:tenant/products/check/:mtProductId', checkProductExists);
 app.get('/admin/:tenant/products/add', getMTProductForAdd);
 app.post('/admin/:tenant/products', uploadProductImages, handleMulterError, postTenantProduct);
+// MT product ID-based routes (new)
+app.get('/admin/:tenant/products/mt/:mtProductId', getTenantProductByMtId);
+app.put('/admin/:tenant/products/mt/:mtProductId', uploadProductImages, handleMulterError, putTenantProductByMtId);
+app.delete('/admin/:tenant/products/mt/:mtProductId', deleteTenantProductByMtId);
+app.get('/admin/:tenant/products/mt/:mtProductId/variants', getProductVariantsByMtId);
+app.get('/admin/:tenant/products/mt/:mtProductId/variants/:mtVariantId', getProductVariantByMtId);
+app.put('/admin/:tenant/products/mt/:mtProductId/variants/:mtVariantId', uploadProductImages, handleMulterError, putProductVariantByMtId);
+// UUID-based routes (kept for backward compatibility)
 app.get('/admin/:tenant/products/:id', getTenantProduct);
 app.put('/admin/:tenant/products/:id', uploadProductImages, handleMulterError, putTenantProduct);
 app.delete('/admin/:tenant/products/:id', deleteTenantProduct);
