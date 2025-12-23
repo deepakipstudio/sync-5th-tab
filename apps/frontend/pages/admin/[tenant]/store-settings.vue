@@ -549,6 +549,7 @@ interface Banner {
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { fetchWithCache, invalidate } = useAdminCache()
 
 const tenantId = computed(() => route.params.tenant as string)
 
@@ -562,7 +563,7 @@ const brandError = ref('')
 
 // Banners State
 const banners = ref<Banner[]>([])
-const loading = ref(true)
+const loading = ref(false) // Start as false - only show if no cache
 const error = ref('')
 
 // Modal state
@@ -604,23 +605,68 @@ function getFullImageUrl(imageUrl: string): string {
   return `${config.public.backendUrl}${imageUrl}`
 }
 
-// Fetch store settings (brand colors and banners)
+// Fetch store settings (brand colors and banners) with cache-first strategy
 async function fetchStoreSettings() {
-  loading.value = true
+  const cacheKey = `admin:store-settings:${tenantId.value}`
+  const ttl = 5 * 60 * 1000 // 5 minutes
+
+  // Check cache first
+  const cached = useAdminCache().getCached<{
+    brandSettings: {
+      primaryBrandColor: string | null
+      secondaryBrandColor: string | null
+    }
+    banners: Banner[]
+  }>(cacheKey)
+  
+  if (cached) {
+    // Show cached data immediately
+    brandForm.value.primaryBrandColor = cached.brandSettings.primaryBrandColor || '#8e213e'
+    brandForm.value.secondaryBrandColor = cached.brandSettings.secondaryBrandColor || '#a83d5a'
+    banners.value = cached.banners
+    loading.value = false
+  } else {
+    loading.value = true
+  }
+
   error.value = ''
   brandError.value = ''
   
   try {
-    const data = await $fetch<{
-      brandSettings: {
-        primaryBrandColor: string | null
-        secondaryBrandColor: string | null
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        const response = await $fetch<{
+          brandSettings: {
+            primaryBrandColor: string | null
+            secondaryBrandColor: string | null
+          }
+          banners: Banner[]
+        }>(`/admin/${tenantId.value}/store-settings`, {
+          baseURL: config.public.backendUrl,
+          credentials: 'include',
+        })
+        return {
+          brandSettings: response.brandSettings,
+          banners: response.banners,
+        }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: {
+          brandSettings: {
+            primaryBrandColor: string | null
+            secondaryBrandColor: string | null
+          }
+          banners: Banner[]
+        }) => {
+          // Update UI when fresh data arrives
+          brandForm.value.primaryBrandColor = freshData.brandSettings.primaryBrandColor || '#8e213e'
+          brandForm.value.secondaryBrandColor = freshData.brandSettings.secondaryBrandColor || '#a83d5a'
+          banners.value = freshData.banners
+        },
       }
-      banners: Banner[]
-    }>(`/admin/${tenantId.value}/store-settings`, {
-      baseURL: config.public.backendUrl,
-      credentials: 'include',
-    })
+    )
     
     // Set brand colors (with defaults)
     brandForm.value.primaryBrandColor = data.brandSettings.primaryBrandColor || '#8e213e'
@@ -628,12 +674,16 @@ async function fetchStoreSettings() {
     banners.value = data.banners
   } catch (e: any) {
     error.value = e.data?.error || e.message || 'Failed to load store settings'
+    // If we have cached data, keep showing it even on error
+    if (!cached) {
+      banners.value = []
+    }
   } finally {
     loading.value = false
   }
 }
 
-// Save brand settings
+// Save brand settings with optimistic update
 async function saveBrandSettings() {
   savingBrand.value = true
   brandError.value = ''
@@ -651,6 +701,26 @@ async function saveBrandSettings() {
     return
   }
 
+  // Optimistic update - update cache immediately
+  const cacheKey = `admin:store-settings:${tenantId.value}`
+  const cached = useAdminCache().getCached<{
+    brandSettings: {
+      primaryBrandColor: string | null
+      secondaryBrandColor: string | null
+    }
+    banners: Banner[]
+  }>(cacheKey)
+  
+  if (cached) {
+    useAdminCache().setCache(cacheKey, {
+      ...cached,
+      brandSettings: {
+        primaryBrandColor: brandForm.value.primaryBrandColor || null,
+        secondaryBrandColor: brandForm.value.secondaryBrandColor || null,
+      },
+    })
+  }
+
   try {
     await $fetch(`/admin/${tenantId.value}/store-settings/brand`, {
       baseURL: config.public.backendUrl,
@@ -662,9 +732,19 @@ async function saveBrandSettings() {
       credentials: 'include',
     })
     
+    // Invalidate cache to force refresh
+    invalidate(cacheKey)
+    await fetchStoreSettings()
+    
     showToast('success', 'Brand settings saved successfully')
   } catch (e: any) {
     brandError.value = e.data?.error || e.message || 'Failed to save brand settings'
+    // Revert optimistic update on error
+    if (cached) {
+      useAdminCache().setCache(cacheKey, cached)
+      brandForm.value.primaryBrandColor = cached.brandSettings.primaryBrandColor || '#8e213e'
+      brandForm.value.secondaryBrandColor = cached.brandSettings.secondaryBrandColor || '#a83d5a'
+    }
   } finally {
     savingBrand.value = false
   }
@@ -812,6 +892,8 @@ async function saveBanner() {
     }
 
     closeModal()
+    // Invalidate cache and refresh
+    invalidate(`admin:store-settings:${tenantId.value}`)
     await fetchStoreSettings()
   } catch (e: any) {
     formError.value = e.data?.error || e.message || 'Failed to save banner'
@@ -840,6 +922,8 @@ async function deleteBanner() {
     showDeleteModal.value = false
     bannerToDelete.value = null
     showToast('success', 'Banner deleted successfully')
+    // Invalidate cache and refresh
+    invalidate(`admin:store-settings:${tenantId.value}`)
     await fetchStoreSettings()
   } catch (e: any) {
     showToast('error', e.data?.error || e.message || 'Failed to delete banner')

@@ -159,6 +159,7 @@
 const route = useRoute()
 const config = useRuntimeConfig()
 const tenantId = computed(() => route.params.tenant as string | undefined)
+const { fetchWithCache } = useAdminCache()
 
 // Mobile menu state
 const mobileMenuOpen = ref(false)
@@ -167,23 +168,48 @@ const mobileMenuOpen = ref(false)
 const tenantName = ref('')
 const loadingTenant = ref(false)
 
-// Fetch tenant name
+// Fetch tenant name with caching
 async function fetchTenantName() {
   if (!tenantId.value) {
     tenantName.value = ''
     return
   }
 
-  loadingTenant.value = true
+  const cacheKey = `admin:tenant-name:${tenantId.value}`
+  const ttl = 30 * 60 * 1000 // 30 minutes for tenant name (relatively static)
+
+  // Try to get from cache first
+  const cached = useAdminCache().getCached<string>(cacheKey)
+  if (cached) {
+    tenantName.value = cached
+    loadingTenant.value = false
+  }
+
+  // Fetch with cache-first strategy
   try {
-    const data = await $fetch<{ data: { name: string } }>(`/tenants/${tenantId.value}`, {
-      baseURL: config.public.backendUrl,
-      credentials: 'include',
-    })
-    tenantName.value = data.data?.name || ''
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        const response = await $fetch<{ data: { name: string } }>(`/tenants/${tenantId.value}`, {
+          baseURL: config.public.backendUrl,
+          credentials: 'include',
+        })
+        return response.data?.name || ''
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (name: string) => {
+          // Update UI when fresh data arrives
+          tenantName.value = name
+        },
+      }
+    )
+    tenantName.value = data || ''
   } catch (e) {
     // Fallback to ID if name fetch fails
-    tenantName.value = ''
+    if (!tenantName.value) {
+      tenantName.value = ''
+    }
   } finally {
     loadingTenant.value = false
   }

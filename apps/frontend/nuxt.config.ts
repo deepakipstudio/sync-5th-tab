@@ -5,10 +5,11 @@ export default defineNuxtConfig({
   ssr: false, // SPA mode - auth requires client-side cookies
   runtimeConfig: {
     public: {
-      backendUrl: process.env.NUXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'
+      backendUrl: process.env.NUXT_PUBLIC_BACKEND_URL || 'http://localhost:4000',
+      adminCacheEnabled: process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== 'false' && process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== '0' && process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== ''
     }
   },
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
   app: {
     head: {
       link: [

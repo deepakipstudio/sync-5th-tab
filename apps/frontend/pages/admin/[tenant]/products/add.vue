@@ -280,8 +280,10 @@ definePageMeta({ layout: 'admin' })
 const route = useRoute()
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
+const { getRouteState } = useAdminNavigation()
+const { fetchWithCache } = useAdminCache()
 
-const loading = ref(true)
+const loading = ref(false) // Start as false - only show if no data available
 const error = ref<string | null>(null)
 const saving = ref(false)
 const formError = ref<string | null>(null)
@@ -299,7 +301,28 @@ const productImages = ref<Array<{ file: File; preview: string; isFeatured: boole
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
 
-// Fetch MT product data
+// Initialize with route state data if available
+const routeState = getRouteState<{
+  mtProductId?: string
+  productName?: string
+  productDescription?: string
+}>()
+
+// Set initial product data from route state
+if (routeState) {
+  mtProduct.value = {
+    id: routeState.mtProductId || mtProductId.value,
+    attributes: {
+      title: routeState.productName || '',
+      description: routeState.productDescription || '',
+    },
+  }
+  if (routeState.productDescription) {
+    form.value.description = routeState.productDescription
+  }
+}
+
+// Fetch MT product data with cache-first strategy
 async function fetchMTProduct() {
   if (!mtProductId.value) {
     error.value = 'Product ID is required'
@@ -307,26 +330,70 @@ async function fetchMTProduct() {
     return
   }
 
-  try {
-    loading.value = true
-    error.value = null
-    
-    const response = await $fetch<{ product: any; variants: any[] }>(`${backendUrl}/admin/${route.params.tenant}/products/add`, {
-      credentials: 'include',
-      query: {
-        mtProductId: mtProductId.value,
-      },
-    })
+  const tenantId = route.params.tenant as string
+  const cacheKey = `admin:mt-product:${tenantId}:${mtProductId.value}`
+  const ttl = 5 * 60 * 1000 // 5 minutes
 
-    mtProduct.value = response.product
-    variants.value = response.variants || []
+  // Check cache first
+  const cached = useAdminCache().getCached<{ product: any; variants: any[] }>(cacheKey)
+  if (cached) {
+    // Show cached data immediately
+    mtProduct.value = cached.product
+    variants.value = cached.variants || []
+    if (mtProduct.value?.attributes?.description) {
+      form.value.description = mtProduct.value.attributes.description
+    }
+    loading.value = false
+  } else if (!mtProduct.value) {
+    // Only show loading if we don't have route state data
+    loading.value = true
+  }
+
+  error.value = null
+
+  try {
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        const response = await $fetch<{ product: any; variants: any[] }>(`${backendUrl}/admin/${tenantId}/products/add`, {
+          credentials: 'include',
+          query: {
+            mtProductId: mtProductId.value,
+          },
+        })
+        return {
+          product: response.product,
+          variants: response.variants || [],
+        }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: { product: any; variants: any[] }) => {
+          // Update UI when fresh data arrives
+          mtProduct.value = freshData.product
+          variants.value = freshData.variants || []
+          if (mtProduct.value?.attributes?.description && !form.value.description) {
+            form.value.description = mtProduct.value.attributes.description
+          }
+        },
+      }
+    )
+
+    // Update with fresh data
+    mtProduct.value = data.product
+    variants.value = data.variants || []
     
-    // Pre-fill description from MT
-    if (mtProduct.value && mtProduct.value.attributes?.description) {
+    // Pre-fill description from MT if not already set
+    if (mtProduct.value?.attributes?.description && !form.value.description) {
       form.value.description = mtProduct.value.attributes.description
     }
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch product details'
+    // If we have route state data, keep showing it even on error
+    if (!routeState) {
+      mtProduct.value = null
+      variants.value = []
+    }
   } finally {
     loading.value = false
   }
@@ -398,6 +465,7 @@ async function saveProduct() {
     saving.value = true
     formError.value = null
 
+    const tenantId = route.params.tenant as string
     const formData = new FormData()
     formData.append('mtProductId', mtProductId.value)
     formData.append('description', form.value.description || '')
@@ -411,14 +479,19 @@ async function saveProduct() {
       }
     })
 
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products`, {
+    await $fetch(`${backendUrl}/admin/${tenantId}/products`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
     })
 
+    // Invalidate products list cache
+    const { invalidate } = useAdminCache()
+    invalidate(`admin:products:${tenantId}`)
+    invalidate(`admin:mt-product:${tenantId}:${mtProductId.value}`)
+
     // Navigate to products list
-    navigateTo(`/admin/${route.params.tenant}/products`)
+    navigateTo(`/admin/${tenantId}/products`)
   } catch (err: any) {
     formError.value = err.message || 'Failed to create product'
   } finally {
@@ -427,7 +500,13 @@ async function saveProduct() {
 }
 
 onMounted(() => {
-  fetchMTProduct()
+  // Only fetch if we don't have route state data
+  if (!routeState || !mtProduct.value) {
+    fetchMTProduct()
+  } else {
+    // We have route state data, but still fetch full details in background
+    fetchMTProduct()
+  }
 })
 </script>
 

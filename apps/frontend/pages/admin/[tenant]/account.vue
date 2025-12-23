@@ -120,6 +120,8 @@ definePageMeta({ layout: 'admin' })
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const adminCache = useAdminCache()
+const { fetchWithCache } = adminCache
 
 const tenantId = computed(() => route.params.tenant as string)
 
@@ -142,21 +144,68 @@ interface AccountData {
 }
 
 const account = ref<AccountData | null>(null)
-const loading = ref(true)
+const loading = ref(false) // Start as false - only show if no cache
 const error = ref('')
 
+// Try to get tenant name from layout cache
+const tenantNameCacheKey = `admin:tenant-name:${tenantId.value}`
+const cachedTenantName = adminCache.getCached<string>(tenantNameCacheKey)
+
+// Initialize with cached tenant data if available
+if (cachedTenantName) {
+  account.value = {
+    role: 'admin',
+    tenant: {
+      id: tenantId.value,
+      name: cachedTenantName,
+      slug: '',
+      mtSubdomain: '',
+    },
+  }
+}
+
 async function fetchAccount() {
-  loading.value = true
+  const cacheKey = `admin:account:${tenantId.value}`
+  const ttl = 5 * 60 * 1000 // 5 minutes
+
+  // Check cache first
+  const cached = adminCache.getCached<AccountData>(cacheKey)
+  if (cached) {
+    // Show cached data immediately
+    account.value = cached
+    loading.value = false
+  } else if (!account.value) {
+    // Only show loading if we don't have any data
+    loading.value = true
+  }
+
   error.value = ''
 
   try {
-    const response = await $fetch<{ data: AccountData }>(`/admin/${tenantId.value}/account`, {
-      baseURL: config.public.backendUrl,
-      credentials: 'include',
-    })
-    account.value = response.data
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        const response = await $fetch<{ data: AccountData }>(`/admin/${tenantId.value}/account`, {
+          baseURL: config.public.backendUrl,
+          credentials: 'include',
+        })
+        return response.data
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: AccountData) => {
+          // Update UI when fresh data arrives
+          account.value = freshData
+        },
+      }
+    )
+    account.value = data
   } catch (e: any) {
     error.value = e.data?.error || e.message || 'Unknown error'
+    // If we have cached data, keep showing it even on error
+    if (!cached && !account.value) {
+      account.value = null
+    }
   } finally {
     loading.value = false
   }

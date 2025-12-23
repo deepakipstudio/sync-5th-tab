@@ -414,11 +414,13 @@ definePageMeta({ layout: 'admin' })
 const route = useRoute()
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
+const { fetchWithCache, invalidate } = useAdminCache()
 
-const loading = ref(true)
+const loading = ref(false) // Start as false - only show loading if no cache
 const error = ref<string | null>(null)
 const products = ref<any[]>([])
 const mtSubdomain = ref<string | null>(null)
+const refreshing = ref(false) // Track background refresh
 
 const showAddModal = ref(false)
 const showSyncModal = ref(false)
@@ -436,18 +438,58 @@ const selectedProducts = ref<string[]>([])
 const syncing = ref(false)
 const syncResult = ref<any>(null)
 
-// Fetch products
+// Fetch products with cache-first strategy
 async function fetchProducts() {
-  try {
+  const tenantId = route.params.tenant as string
+  const cacheKey = `admin:products:${tenantId}`
+  const ttl = 5 * 60 * 1000 // 5 minutes
+
+  // Check cache first
+  const cached = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(cacheKey)
+  if (cached) {
+    // Show cached data immediately
+    products.value = cached.products || []
+    mtSubdomain.value = cached.mtSubdomain || null
+    loading.value = false
+  } else {
+    // No cache, show loading
     loading.value = true
-    error.value = null
-    const response = await $fetch<{ products: any[]; mtSubdomain?: string }>(`${backendUrl}/admin/${route.params.tenant}/products`, {
-      credentials: 'include',
-    })
-    products.value = response.products || []
-    mtSubdomain.value = response.mtSubdomain || null
+  }
+
+  error.value = null
+
+  try {
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        const response = await $fetch<{ products: any[]; mtSubdomain?: string }>(`${backendUrl}/admin/${tenantId}/products`, {
+          credentials: 'include',
+        })
+        return {
+          products: response.products || [],
+          mtSubdomain: response.mtSubdomain || null,
+        }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: { products: any[]; mtSubdomain?: string }) => {
+          // Update UI when fresh data arrives
+          products.value = freshData.products || []
+          mtSubdomain.value = freshData.mtSubdomain || null
+          refreshing.value = false
+        },
+      }
+    )
+
+    // Update with fresh data
+    products.value = data.products || []
+    mtSubdomain.value = data.mtSubdomain || null
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch products'
+    // If we have cached data, keep showing it even on error
+    if (!cached) {
+      products.value = []
+    }
   } finally {
     loading.value = false
   }
@@ -497,6 +539,8 @@ function closeAddModal() {
 }
 
 async function selectMTProduct(product: any) {
+  const { navigateToProductAdd, navigateToProductEdit, setRouteState } = useAdminNavigation()
+  
   try {
     // Check if product already exists locally
     const checkResponse = await $fetch<{ exists: boolean; productId: string | null }>(
@@ -507,16 +551,30 @@ async function selectMTProduct(product: any) {
     )
 
     if (checkResponse.exists && checkResponse.productId) {
-      // Product exists, navigate to edit page
-      navigateTo(`/admin/${route.params.tenant}/products/edit/${checkResponse.productId}`)
+      // Product exists, navigate to edit page with product data
+      const productData = {
+        mtProductId: product.id,
+        productName: product.attributes?.title,
+        productDescription: product.attributes?.description,
+      }
+      setRouteState(productData)
+      navigateToProductEdit(checkResponse.productId, productData)
     } else {
-      // Product doesn't exist, navigate to add page
-      navigateTo(`/admin/${route.params.tenant}/products/add?mtProductId=${product.id}`)
+      // Product doesn't exist, navigate to add page with product data
+      navigateToProductAdd({
+        mtProductId: product.id,
+        productName: product.attributes?.title,
+        productDescription: product.attributes?.description,
+      })
     }
   } catch (err: any) {
     console.error('Error checking product existence:', err)
-    // On error, default to add page
-    navigateTo(`/admin/${route.params.tenant}/products/add?mtProductId=${product.id}`)
+    // On error, default to add page with available data
+    navigateToProductAdd({
+      mtProductId: product.id,
+      productName: product.attributes?.title,
+      productDescription: product.attributes?.description,
+    })
   }
 }
 
@@ -566,7 +624,9 @@ async function performSync() {
       },
     })
     syncResult.value = response
-    // Refresh products after sync
+    // Invalidate cache and refresh products after sync
+    const tenantId = route.params.tenant as string
+    invalidate(`admin:products:${tenantId}`)
     await fetchProducts()
   } catch (err: any) {
     console.error('Error syncing products:', err)
@@ -605,7 +665,22 @@ function handleProductCardClick(productId: string, event: Event) {
   if (target.closest('.z-10') || target.closest('.z-20')) {
     return
   }
-  navigateTo(`/admin/${route.params.tenant}/products/edit/${productId}`)
+  
+  // Find product data to pass along
+  const product = products.value.find(p => p.id === productId)
+  const { navigateToProductEdit, setRouteState } = useAdminNavigation()
+  
+  if (product) {
+    const productData = {
+      mtProductId: product.mtProductId,
+      productName: product.mtProductName,
+      productDescription: product.description,
+    }
+    setRouteState(productData)
+    navigateToProductEdit(productId, productData)
+  } else {
+    navigateToProductEdit(productId)
+  }
 }
 
 function toggleProductMenu(productId: string) {
@@ -652,24 +727,51 @@ function viewOnStore(product: any) {
 async function toggleProductVisibility(product: any) {
   closeProductMenu()
   const newVisible = !product.visible
+  
+  // Optimistic update - update UI immediately
+  const productIndex = products.value.findIndex(p => p.id === product.id)
+  if (productIndex !== -1) {
+    products.value[productIndex] = {
+      ...products.value[productIndex],
+      visible: newVisible,
+    }
+  }
+
+  // Update cache optimistically
+  const tenantId = route.params.tenant as string
+  const cacheKey = `admin:products:${tenantId}`
+  const cached = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(cacheKey)
+  if (cached) {
+    const updatedProducts = cached.products.map(p => 
+      p.id === product.id ? { ...p, visible: newVisible } : p
+    )
+    useAdminCache().setCache(cacheKey, {
+      ...cached,
+      products: updatedProducts,
+    })
+  }
+
+  // Sync in background
   try {
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products/${product.id}`, {
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/${product.id}`, {
       method: 'PUT',
       credentials: 'include',
       body: {
         visible: String(newVisible),
       },
     })
-    // Update only the affected product in the list
-    const productIndex = products.value.findIndex(p => p.id === product.id)
+    // Refresh cache with fresh data
+    invalidate(cacheKey)
+    await fetchProducts()
+  } catch (err: any) {
+    console.error('Error toggling product visibility:', err)
+    // Revert optimistic update on error
     if (productIndex !== -1) {
       products.value[productIndex] = {
         ...products.value[productIndex],
-        visible: newVisible,
+        visible: !newVisible,
       }
     }
-  } catch (err: any) {
-    console.error('Error toggling product visibility:', err)
     alert(err.message || 'Failed to update product visibility')
   }
 }
@@ -688,17 +790,45 @@ function closeDeleteModal() {
 async function confirmDelete() {
   if (!productToDelete.value) return
 
+  const productId = productToDelete.value.id
+  const tenantId = route.params.tenant as string
+
+  // Optimistic update - remove from UI immediately
+  const productIndex = products.value.findIndex(p => p.id === productId)
+  const deletedProduct = productToDelete.value
+  if (productIndex !== -1) {
+    products.value.splice(productIndex, 1)
+  }
+
+  // Update cache optimistically
+  const cacheKey = `admin:products:${tenantId}`
+  const cached = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(cacheKey)
+  if (cached) {
+    const updatedProducts = cached.products.filter(p => p.id !== productId)
+    useAdminCache().setCache(cacheKey, {
+      ...cached,
+      products: updatedProducts,
+    })
+  }
+
+  closeDeleteModal()
+
+  // Sync in background
   try {
     deleting.value = true
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products/${productToDelete.value.id}`, {
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/${productId}`, {
       method: 'DELETE',
       credentials: 'include',
     })
-    closeDeleteModal()
-    // Refresh products list
+    // Invalidate and refresh cache
+    invalidate(cacheKey)
     await fetchProducts()
   } catch (err: any) {
     console.error('Error deleting product:', err)
+    // Revert optimistic update on error
+    if (productIndex !== -1) {
+      products.value.splice(productIndex, 0, deletedProduct)
+    }
     alert(err.message || 'Failed to delete product')
   } finally {
     deleting.value = false

@@ -364,8 +364,10 @@ definePageMeta({ layout: 'admin' })
 const route = useRoute()
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
+const { getRouteState } = useAdminNavigation()
+const { fetchWithCache, invalidate } = useAdminCache()
 
-const loading = ref(true)
+const loading = ref(false) // Start as false - only show if no cache
 const loadingVariants = ref(false)
 const error = ref<string | null>(null)
 const saving = ref(false)
@@ -388,26 +390,101 @@ const isDragging = ref(false)
 const featuredImageId = ref<string | null>(null)
 const expandedVariants = ref<string[]>([])
 
-// Fetch product
-async function fetchProduct() {
-  try {
-    loading.value = true
-    error.value = null
-    
-    const response = await $fetch<{ product: any }>(`${backendUrl}/admin/${route.params.tenant}/products/${route.params.id}`, {
-      credentials: 'include',
-    })
+// Initialize with route state or cache
+const routeState = getRouteState<{
+  mtProductId?: string
+  productName?: string
+  productDescription?: string
+}>()
 
-    product.value = response.product
-    mtProductName.value = response.product.mtProductName || null
-    existingImages.value = response.product.images || []
-    form.value.description = response.product.description || ''
-    form.value.visible = response.product.visible
+// Try to get product from products list cache first
+const tenantId = route.params.tenant as string
+const productId = route.params.id as string
+const productsCacheKey = `admin:products:${tenantId}`
+const cachedProducts = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(productsCacheKey)
+
+if (cachedProducts?.products) {
+  const cachedProduct = cachedProducts.products.find(p => p.id === productId)
+  if (cachedProduct) {
+    // Use cached product data immediately
+    product.value = cachedProduct
+    mtProductName.value = cachedProduct.mtProductName || null
+    form.value.description = cachedProduct.description || ''
+    form.value.visible = cachedProduct.visible
+    existingImages.value = cachedProduct.images || []
+  }
+}
+
+// Also check route state
+if (routeState && !product.value) {
+  product.value = {
+    id: productId,
+    mtProductName: routeState.productName,
+    description: routeState.productDescription,
+  }
+  mtProductName.value = routeState.productName || null
+  form.value.description = routeState.productDescription || ''
+}
+
+// Fetch product with cache-first strategy
+async function fetchProduct() {
+  const cacheKey = `admin:product:${tenantId}:${productId}`
+  const ttl = 5 * 60 * 1000 // 5 minutes
+
+  // Check cache first
+  const cached = useAdminCache().getCached<{ product: any }>(cacheKey)
+  if (cached?.product) {
+    // Show cached data immediately
+    product.value = cached.product
+    mtProductName.value = cached.product.mtProductName || null
+    existingImages.value = cached.product.images || []
+    form.value.description = cached.product.description || ''
+    form.value.visible = cached.product.visible
+    loading.value = false
+  } else if (!product.value) {
+    // Only show loading if we don't have any data
+    loading.value = true
+  }
+
+  error.value = null
+
+  try {
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        const response = await $fetch<{ product: any }>(`${backendUrl}/admin/${tenantId}/products/${productId}`, {
+          credentials: 'include',
+        })
+        return { product: response.product }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: { product: any }) => {
+          // Update UI when fresh data arrives
+          product.value = freshData.product
+          mtProductName.value = freshData.product.mtProductName || null
+          existingImages.value = freshData.product.images || []
+          form.value.description = freshData.product.description || ''
+          form.value.visible = freshData.product.visible
+        },
+      }
+    )
+
+    // Update with fresh data
+    product.value = data.product
+    mtProductName.value = data.product.mtProductName || null
+    existingImages.value = data.product.images || []
+    form.value.description = data.product.description || ''
+    form.value.visible = data.product.visible
 
     // Fetch variants with MT data
     await fetchVariants()
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch product'
+    // If we have cached data, keep showing it even on error
+    if (!cached && !product.value) {
+      product.value = null
+    }
   } finally {
     loading.value = false
   }
@@ -549,11 +626,15 @@ async function saveProduct() {
       formData.append('featuredImageIndex', String(featuredIndex))
     }
 
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products/${route.params.id}`, {
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/${productId}`, {
       method: 'PUT',
       credentials: 'include',
       body: formData,
     })
+
+    // Invalidate caches
+    invalidate(`admin:product:${tenantId}:${productId}`)
+    invalidate(`admin:products:${tenantId}`)
 
     // Refresh product data
     await fetchProduct()
