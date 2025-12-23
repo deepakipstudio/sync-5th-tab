@@ -25,3 +25,29 @@ export async function getTenantInfo(req: Request, res: Response) {
     res.status(500).json({ error: e.message });
   }
 }
+
+// GET /tenants/:id/branding -> Get tenant brand colors for storefront
+export async function getTenantBranding(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+      select: {
+        primaryBrandColor: true,
+        secondaryBrandColor: true,
+      }
+    });
+    
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+    
+    res.json({
+      primaryBrandColor: tenant.primaryBrandColor,
+      secondaryBrandColor: tenant.secondaryBrandColor,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+}

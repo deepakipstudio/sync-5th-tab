@@ -11,13 +11,15 @@ datasource db {
 }
 
 model Tenant {
-  id           String   @id @default(uuid(7))
-  name         String
-  slug         String   @unique
-  mtSubdomain  String
-  clientId     String
-  clientSecret String?
-  createdAt    DateTime @default(now())
+  id                  String   @id @default(uuid(7))
+  name                String
+  slug                String   @unique
+  mtSubdomain         String
+  clientId            String
+  clientSecret        String?
+  primaryBrandColor   String?
+  secondaryBrandColor String?
+  createdAt           DateTime @default(now())
 
   products Product[]
   sessions Session[]
@@ -26,19 +28,19 @@ model Tenant {
 }
 
 model Product {
-  id            String   @id @default(uuid(7))
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  mtProductId   String   // Marianatek product ID (e.g., "14965")
-  description   String?  // Custom description (overrides MT description)
-  visible       Boolean  @default(true)
-  sortOrder     Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid(7))
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  mtProductId String // Marianatek product ID (e.g., "14965")
+  description String? // Custom description (overrides MT description)
+  visible     Boolean  @default(true)
+  sortOrder   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  variants      ProductVariant[]
-  images        ProductImage[]
-  
+  variants ProductVariant[]
+  images   ProductImage[]
+
   @@unique([tenantId, mtProductId])
   @@index([tenantId])
   @@index([mtProductId])
@@ -52,7 +54,7 @@ model Session {
   accessToken  String
   refreshToken String
   expiresAt    DateTime
-  role         String   // 'admin' or 'customer'
+  role         String // 'admin' or 'customer'
   createdAt    DateTime @default(now())
 
   @@index([tenantId])
@@ -60,38 +62,38 @@ model Session {
 }
 
 model Banner {
-  id            String    @id @default(uuid(7))
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id])
-  filename      String    // stored filename (UUID-based)
-  originalName  String    // original upload name
-  mimeType      String    // image/jpeg, image/png, etc.
-  size          Int       // file size in bytes
-  collectionId  Int?
-  productClass  String?
-  expiresAt     DateTime?
-  sortOrder     Int?
-  visible       Boolean   @default(true)
-  createdAt     DateTime  @default(now())
+  id           String    @id @default(uuid(7))
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  filename     String // stored filename (UUID-based)
+  originalName String // original upload name
+  mimeType     String // image/jpeg, image/png, etc.
+  size         Int // file size in bytes
+  collectionId Int?
+  productClass String?
+  expiresAt    DateTime?
+  sortOrder    Int?
+  visible      Boolean   @default(true)
+  createdAt    DateTime  @default(now())
 
   @@index([tenantId])
   @@index([visible])
 }
 
 model ProductVariant {
-  id            String   @id @default(uuid(7))
-  productId     String
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  mtVariantId   String   // Marianatek variant ID (e.g., "14966")
-  sku           String   // SKU from MT (e.g., "TEST8877")
-  description   String?  // Custom description (overrides MT description)
-  visible       Boolean  @default(true)
-  sortOrder     Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid(7))
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  mtVariantId String // Marianatek variant ID (e.g., "14966")
+  sku         String // SKU from MT (e.g., "TEST8877")
+  description String? // Custom description (overrides MT description)
+  visible     Boolean  @default(true)
+  sortOrder   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  images        ProductImage[]
-  
+  images ProductImage[]
+
   @@unique([productId, mtVariantId])
   @@index([productId])
   @@index([mtVariantId])
@@ -99,18 +101,18 @@ model ProductVariant {
 }
 
 model ProductImage {
-  id            String   @id @default(uuid(7))
-  productId     String?
-  product       Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantId     String?
-  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  filename      String   // stored filename (UUID-based)
-  originalName  String   // original upload name
-  mimeType      String   // image/jpeg, image/png, etc.
-  size          Int      // file size in bytes
-  isFeatured    Boolean  @default(false) // featured image flag
-  sortOrder     Int      @default(0) // for gallery ordering
-  createdAt     DateTime @default(now())
+  id           String          @id @default(uuid(7))
+  productId    String?
+  product      Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId    String?
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  filename     String // stored filename (UUID-based)
+  originalName String // original upload name
+  mimeType     String // image/jpeg, image/png, etc.
+  size         Int // file size in bytes
+  isFeatured   Boolean         @default(false) // featured image flag
+  sortOrder    Int             @default(0) // for gallery ordering
+  createdAt    DateTime        @default(now())
 
   @@index([productId])
   @@index([variantId])
