@@ -3,13 +3,13 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Products</h1>
-        <p class="text-sm text-gray-500 mt-1">Manage your product catalog</p>
+        <h1 class="text-2xl font-semibold text-admin-text-primary">Products</h1>
+        <p class="text-sm text-admin-text-secondary mt-1">Manage your product catalog</p>
       </div>
       <div class="flex gap-2">
         <button
           @click="openSyncModal"
-          class="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+          class="inline-flex items-center gap-2 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-hover transition-colors"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -18,7 +18,7 @@
         </button>
         <button
           @click="openAddModal"
-          class="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+          class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -33,38 +33,38 @@
       <div
         v-for="i in 6"
         :key="i"
-        class="bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse"
+        class="bg-admin-surface-base rounded-lg border border-admin-border overflow-hidden animate-pulse"
       >
         <!-- Image Skeleton -->
-        <div class="aspect-[16/9] bg-gray-200"></div>
+        <div class="aspect-[16/9] bg-admin-surface-raised"></div>
         <!-- Content Skeleton -->
         <div class="p-4 space-y-3">
-          <div class="h-5 bg-gray-200 rounded w-3/4"></div>
-          <div class="h-3 bg-gray-200 rounded w-1/4"></div>
-          <div class="h-4 bg-gray-200 rounded w-full"></div>
-          <div class="h-4 bg-gray-200 rounded w-2/3"></div>
-          <div class="h-3 bg-gray-200 rounded w-1/3"></div>
+          <div class="h-5 bg-admin-surface-raised rounded w-3/4"></div>
+          <div class="h-3 bg-admin-surface-raised rounded w-1/4"></div>
+          <div class="h-4 bg-admin-surface-raised rounded w-full"></div>
+          <div class="h-4 bg-admin-surface-raised rounded w-2/3"></div>
+          <div class="h-3 bg-admin-surface-raised rounded w-1/3"></div>
         </div>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
       {{ error }}
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="products.length === 0" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
-      <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div v-else-if="products.length === 0" class="bg-admin-surface-base rounded-lg border border-admin-border p-12 text-center">
+      <div class="mx-auto w-16 h-16 bg-admin-surface-raised rounded-full flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
       </div>
-      <h3 class="text-lg font-medium text-gray-900 mb-1">No products yet</h3>
-      <p class="text-gray-500 mb-4">Get started by adding your first product from Marianatek.</p>
+      <h3 class="text-lg font-medium text-admin-text-primary mb-1">No products yet</h3>
+      <p class="text-admin-text-secondary mb-4">Get started by adding your first product from Marianatek.</p>
       <button
         @click="openAddModal"
-        class="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+        class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -78,16 +78,16 @@
       <div
         v-for="product in products"
         :key="product.id"
-        class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative"
+        class="bg-admin-surface-base rounded-lg border border-admin-border overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative"
         @click="handleProductCardClick(product.id, $event)"
       >
         <!-- Three-dot Menu -->
         <div class="absolute top-2 right-2 z-10">
           <button
             @click.stop="toggleProductMenu(product.id)"
-            class="p-1.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white shadow-sm transition-colors"
+            class="p-1.5 bg-admin-surface-base/90 backdrop-blur-sm rounded-full hover:bg-admin-surface-base shadow-sm transition-colors"
           >
-            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-admin-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
             </svg>
           </button>
@@ -96,11 +96,11 @@
           <div
             v-if="openMenuId === product.id"
             @click.stop
-            class="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20"
+            class="absolute right-0 mt-1 w-56 bg-admin-surface-base rounded-lg shadow-lg border border-admin-border py-1 z-20"
           >
             <button
               @click.stop="editOnMT(product)"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              class="w-full text-left px-4 py-2 text-sm text-admin-text-primary hover:bg-admin-surface-hover flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -109,7 +109,7 @@
             </button>
             <button
               @click.stop="viewOnStore(product)"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              class="w-full text-left px-4 py-2 text-sm text-admin-text-primary hover:bg-admin-surface-hover flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -119,17 +119,17 @@
             </button>
             <button
               @click.stop="toggleProductVisibility(product)"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              class="w-full text-left px-4 py-2 text-sm text-admin-text-primary hover:bg-admin-surface-hover flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
               </svg>
               {{ product.visible ? 'Disable' : 'Enable' }}
             </button>
-            <div class="border-t border-gray-200 my-1"></div>
+            <div class="border-t border-admin-border my-1"></div>
             <button
               @click.stop="openDeleteModal(product)"
-              class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              class="w-full text-left px-4 py-2 text-sm text-admin-state-danger-text hover:bg-admin-state-danger-soft flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -140,7 +140,7 @@
         </div>
 
         <!-- Image Preview -->
-        <div class="aspect-[16/9] bg-gray-100 relative">
+        <div class="aspect-[16/9] bg-admin-surface-raised relative">
           <img
             v-if="getFeaturedImage(product)"
             :src="getFullImageUrl(getFeaturedImage(product)!.imageUrl)"
@@ -149,7 +149,7 @@
             @error="(e: Event) => (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23d1d5db%22%3E%3Cpath d=%22M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4%22/%3E%3C/svg%3E'"
           />
           <div v-else class="w-full h-full flex items-center justify-center">
-            <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-12 h-12 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
@@ -159,8 +159,8 @@
               :class="[
                 'text-xs font-medium px-2 py-0.5 rounded-full',
                 product.visible
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-gray-100 text-gray-600'
+                  ? 'bg-admin-state-success-soft text-admin-state-success-text'
+                  : 'bg-admin-surface-raised text-admin-text-muted'
               ]"
             >
               {{ product.visible ? 'Visible' : 'Hidden' }}
@@ -170,14 +170,14 @@
 
         <!-- Details -->
         <div class="p-4">
-          <h3 class="font-medium text-gray-900 mb-1 line-clamp-2">
+          <h3 class="font-medium text-admin-text-primary mb-1 line-clamp-2">
             {{ product.mtProductName || `Product #${product.mtProductId}` }}
           </h3>
-          <p class="text-xs text-gray-500 mb-1">ID: {{ product.mtProductId }}</p>
-          <p v-if="product.description" class="text-sm text-gray-600 line-clamp-2 mb-2">
+          <p class="text-xs text-admin-text-secondary mb-1">ID: {{ product.mtProductId }}</p>
+          <p v-if="product.description" class="text-sm text-admin-text-secondary line-clamp-2 mb-2">
             {{ product.description }}
           </p>
-          <div class="text-xs text-gray-500">
+          <div class="text-xs text-admin-text-secondary">
             {{ product.variants?.length || 0 }} variant{{ (product.variants?.length || 0) !== 1 ? 's' : '' }}
           </div>
         </div>
@@ -191,10 +191,10 @@
         class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
         @click.self="closeAddModal"
       >
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">Select Product from Marianatek</h2>
-            <button @click="closeAddModal" class="text-gray-400 hover:text-gray-600">
+        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-admin-text-primary">Select Product from Marianatek</h2>
+            <button @click="closeAddModal" class="text-admin-text-muted hover:text-admin-text-secondary">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -209,12 +209,12 @@
                 @input="() => searchMTProducts(1)"
                 type="text"
                 placeholder="Search products..."
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                class="w-full px-4 py-2 border border-admin-border rounded-lg focus:ring-2 focus:ring-admin-brand-strong focus:border-admin-border-focus"
               />
             </div>
 
             <!-- Count and Pagination Info -->
-            <div v-if="mtProductsTotal > 0" class="mb-4 flex items-center justify-between text-sm text-gray-600">
+            <div v-if="mtProductsTotal > 0" class="mb-4 flex items-center justify-between text-sm text-admin-text-secondary">
               <span>
                 Showing {{ mtProducts.length }} out of {{ mtProductsTotal }} product{{ mtProductsTotal !== 1 ? 's' : '' }}
               </span>
@@ -222,17 +222,17 @@
                 <button
                   @click="searchMTProducts(mtProductsPage - 1)"
                   :disabled="mtProductsPage <= 1 || searching"
-                  class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="px-3 py-1 border border-admin-border rounded hover:bg-admin-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
-                <span class="text-gray-700">
+                <span class="text-admin-text-primary">
                   Page {{ mtProductsPage }} of {{ Math.ceil(mtProductsTotal / mtProductsPageSize) }}
                 </span>
                 <button
                   @click="searchMTProducts(mtProductsPage + 1)"
                   :disabled="mtProductsPage >= Math.ceil(mtProductsTotal / mtProductsPageSize) || searching"
-                  class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="px-3 py-1 border border-admin-border rounded hover:bg-admin-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -241,7 +241,7 @@
 
             <!-- Loading -->
             <div v-if="searching" class="flex items-center justify-center py-8">
-              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-admin-brand-strong"></div>
             </div>
 
             <!-- Results -->
@@ -250,15 +250,15 @@
                 v-for="product in mtProducts"
                 :key="product.id"
                 @click="selectMTProduct(product)"
-                class="p-4 border border-gray-200 rounded-lg hover:border-gray-900 hover:bg-gray-50 cursor-pointer transition-colors relative"
+                class="p-4 border border-admin-border rounded-lg hover:border-admin-brand-strong hover:bg-admin-surface-hover cursor-pointer transition-colors relative"
               >
                 <div class="flex items-start justify-between">
                   <div class="flex-1">
-                    <h3 class="font-medium text-gray-900">{{ product.attributes?.title || 'Untitled Product' }}</h3>
-                    <p v-if="product.attributes?.description" class="text-sm text-gray-600 mt-1 line-clamp-2">
+                    <h3 class="font-medium text-admin-text-primary">{{ product.attributes?.title || 'Untitled Product' }}</h3>
+                    <p v-if="product.attributes?.description" class="text-sm text-admin-text-secondary mt-1 line-clamp-2">
                       {{ product.attributes.description }}
                     </p>
-                    <div class="flex gap-4 mt-2 text-xs text-gray-500">
+                    <div class="flex gap-4 mt-2 text-xs text-admin-text-secondary">
                       <span>ID: {{ product.id }}</span>
                       <span v-if="product.attributes?.children_count !== undefined">
                         {{ product.attributes.children_count }} variant{{ product.attributes.children_count !== 1 ? 's' : '' }}
@@ -266,7 +266,7 @@
                     </div>
                   </div>
                   <div v-if="isProductAdded(product.id)" class="ml-4 flex-shrink-0">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-admin-state-success-soft text-admin-state-success-text">
                       Added
                     </span>
                   </div>
@@ -274,10 +274,10 @@
               </div>
             </div>
 
-            <div v-else-if="!searching && mtProducts.length === 0 && searchQuery" class="text-center py-8 text-gray-500">
+            <div v-else-if="!searching && mtProducts.length === 0 && searchQuery" class="text-center py-8 text-admin-text-secondary">
               No products found
             </div>
-            <div v-else-if="!searching && mtProducts.length === 0 && !searchQuery" class="text-center py-8 text-gray-500">
+            <div v-else-if="!searching && mtProducts.length === 0 && !searchQuery" class="text-center py-8 text-admin-text-secondary">
               No products available
             </div>
           </div>
@@ -292,10 +292,10 @@
         class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
         @click.self="closeSyncModal"
       >
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">Sync Products</h2>
-            <button @click="closeSyncModal" class="text-gray-400 hover:text-gray-600">
+        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-admin-text-primary">Sync Products</h2>
+            <button @click="closeSyncModal" class="text-admin-text-muted hover:text-admin-text-secondary">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -303,7 +303,7 @@
           </div>
 
           <div class="p-6 flex-1 overflow-y-auto">
-            <p class="text-sm text-gray-600 mb-4">
+            <p class="text-sm text-admin-text-secondary mb-4">
               Select products to sync from Marianatek. This will update variants, add new ones, and mark deleted variants.
             </p>
 
@@ -314,24 +314,47 @@
                   type="checkbox"
                   :checked="allSelected"
                   @change="toggleAllProducts"
-                  class="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                  class="rounded border-admin-border text-admin-brand-strong focus:ring-admin-brand-strong"
                 />
-                <label class="text-sm font-medium text-gray-700">Select All</label>
+                <label class="text-sm font-medium text-admin-text-primary">Select All</label>
               </div>
               <div
                 v-for="product in products"
                 :key="product.id"
-                class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg"
+                class="flex items-center gap-3 p-3 border border-admin-border rounded-lg"
               >
-                <input
-                  type="checkbox"
-                  :checked="selectedProducts.includes(product.id)"
-                  @change="toggleProduct(product.id)"
-                  class="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
-                />
-                <label class="flex-1 text-sm text-gray-700 cursor-pointer">
-                  Product #{{ product.mtProductId }} ({{ product.variants?.length || 0 }} variants)
-                </label>
+                <!-- Image Thumbnail -->
+                <div class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-admin-surface-raised border border-admin-border flex items-center justify-center">
+                  <img
+                    v-if="getFeaturedImage(product)"
+                    :src="getFullImageUrl(getFeaturedImage(product)!.imageUrl)"
+                    :alt="`${product.mtProductName || 'Product'} image`"
+                    class="w-full h-full object-cover"
+                    @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                  />
+                  <svg
+                    v-else
+                    class="w-6 h-6 text-admin-text-muted"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+                
+                <!-- Checkbox + Product Info -->
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <input
+                    type="checkbox"
+                    :checked="selectedProducts.includes(product.id)"
+                    @change="toggleProduct(product.id)"
+                    class="rounded border-admin-border text-admin-brand-strong focus:ring-admin-brand-strong flex-shrink-0"
+                  />
+                  <label class="flex-1 text-sm text-admin-text-primary cursor-pointer">
+                    {{ product.mtProductName || 'Product' }} ({{ product.mtProductId }}) ({{ product.variants?.length || 0 }} variants)
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -339,21 +362,21 @@
             <button
               @click="performSync"
               :disabled="syncing || selectedProducts.length === 0"
-              class="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span v-if="syncing">Syncing...</span>
               <span v-else>Sync Now ({{ selectedProducts.length }} product{{ selectedProducts.length !== 1 ? 's' : '' }})</span>
             </button>
 
             <!-- Sync Results -->
-            <div v-if="syncResult" class="mt-4 p-4 bg-gray-50 rounded-lg">
-              <h3 class="font-medium text-gray-900 mb-2">Sync Results</h3>
-              <div class="space-y-1 text-sm text-gray-600">
+            <div v-if="syncResult" class="mt-4 p-4 bg-admin-surface-raised rounded-lg">
+              <h3 class="font-medium text-admin-text-primary mb-2">Sync Results</h3>
+              <div class="space-y-1 text-sm text-admin-text-secondary">
                 <p>Products synced: {{ syncResult.summary.synced }}</p>
                 <p>New variants: {{ syncResult.summary.newVariants }}</p>
                 <p>Updated variants: {{ syncResult.summary.updatedVariants }}</p>
                 <p>Deleted variants: {{ syncResult.summary.deletedVariants }}</p>
-                <p v-if="syncResult.summary.errors.length > 0" class="text-red-600 mt-2">
+                <p v-if="syncResult.summary.errors.length > 0" class="text-admin-state-danger-text mt-2">
                   Errors: {{ syncResult.summary.errors.join(', ') }}
                 </p>
               </div>
@@ -370,33 +393,33 @@
         class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
         @click.self="closeDeleteModal"
       >
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-md">
           <div class="p-6">
-            <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="mx-auto w-12 h-12 bg-admin-state-danger-soft rounded-full flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-admin-state-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">Delete from Sync</h3>
-            <p class="text-gray-600 text-center mb-4">
+            <h3 class="text-lg font-semibold text-admin-text-primary text-center mb-2">Delete from Sync</h3>
+            <p class="text-admin-text-secondary text-center mb-4">
               Are you sure you want to delete <strong>{{ productToDelete?.mtProductName || `Product #${productToDelete?.mtProductId}` }}</strong> from Sync?
             </p>
-            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
-              <p class="text-sm text-amber-800">
+            <div class="bg-admin-state-warning-soft border border-admin-state-warning-border rounded-lg p-3 mb-6">
+              <p class="text-sm text-admin-state-warning-text">
                 <strong>Note:</strong> Deleting on Sync won't delete this product from Mariana Tek. To delete this product completely, delete it from your Mariana Tek account.
               </p>
             </div>
             <div class="flex gap-3">
               <button
                 @click="closeDeleteModal"
-                class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-hover transition-colors"
               >
                 Cancel
               </button>
               <button
                 @click="confirmDelete"
                 :disabled="deleting"
-                class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex-1 bg-admin-state-danger-text text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ deleting ? 'Deleting...' : 'Delete from Sync' }}
               </button>
@@ -414,11 +437,13 @@ definePageMeta({ layout: 'admin' })
 const route = useRoute()
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
+const { fetchWithCache, invalidate } = useAdminCache()
 
-const loading = ref(true)
+const loading = ref(false) // Start as false - only show loading if no cache
 const error = ref<string | null>(null)
 const products = ref<any[]>([])
 const mtSubdomain = ref<string | null>(null)
+const refreshing = ref(false) // Track background refresh
 
 const showAddModal = ref(false)
 const showSyncModal = ref(false)
@@ -436,18 +461,58 @@ const selectedProducts = ref<string[]>([])
 const syncing = ref(false)
 const syncResult = ref<any>(null)
 
-// Fetch products
+// Fetch products with cache-first strategy
 async function fetchProducts() {
-  try {
+  const tenantId = route.params.tenant as string
+  const cacheKey = `admin:products:${tenantId}`
+  const ttl = 5 * 60 * 1000 // 5 minutes
+
+  // Check cache first
+  const cached = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(cacheKey)
+  if (cached) {
+    // Show cached data immediately
+    products.value = cached.products || []
+    mtSubdomain.value = cached.mtSubdomain || null
+    loading.value = false
+  } else {
+    // No cache, show loading
     loading.value = true
-    error.value = null
-    const response = await $fetch<{ products: any[]; mtSubdomain?: string }>(`${backendUrl}/admin/${route.params.tenant}/products`, {
-      credentials: 'include',
-    })
-    products.value = response.products || []
-    mtSubdomain.value = response.mtSubdomain || null
+  }
+
+  error.value = null
+
+  try {
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        const response = await $fetch<{ products: any[]; mtSubdomain?: string }>(`${backendUrl}/admin/${tenantId}/products`, {
+          credentials: 'include',
+        })
+        return {
+          products: response.products || [],
+          mtSubdomain: response.mtSubdomain || null,
+        }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: { products: any[]; mtSubdomain?: string }) => {
+          // Update UI when fresh data arrives
+          products.value = freshData.products || []
+          mtSubdomain.value = freshData.mtSubdomain || null
+          refreshing.value = false
+        },
+      }
+    )
+
+    // Update with fresh data
+    products.value = data.products || []
+    mtSubdomain.value = data.mtSubdomain || null
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch products'
+    // If we have cached data, keep showing it even on error
+    if (!cached) {
+      products.value = []
+    }
   } finally {
     loading.value = false
   }
@@ -497,6 +562,8 @@ function closeAddModal() {
 }
 
 async function selectMTProduct(product: any) {
+  const { navigateToProductAdd, navigateToProductEdit, setRouteState } = useAdminNavigation()
+  
   try {
     // Check if product already exists locally
     const checkResponse = await $fetch<{ exists: boolean; productId: string | null }>(
@@ -507,16 +574,30 @@ async function selectMTProduct(product: any) {
     )
 
     if (checkResponse.exists && checkResponse.productId) {
-      // Product exists, navigate to edit page
-      navigateTo(`/admin/${route.params.tenant}/products/edit/${checkResponse.productId}`)
+      // Product exists, navigate to edit page with product data
+      // Use MT product ID (product.id) instead of database UUID
+      const productData = {
+        productName: product.attributes?.title,
+        productDescription: product.attributes?.description,
+      }
+      setRouteState(productData)
+      navigateToProductEdit(product.id, productData)
     } else {
-      // Product doesn't exist, navigate to add page
-      navigateTo(`/admin/${route.params.tenant}/products/add?mtProductId=${product.id}`)
+      // Product doesn't exist, navigate to add page with product data
+      navigateToProductAdd({
+        mtProductId: product.id,
+        productName: product.attributes?.title,
+        productDescription: product.attributes?.description,
+      })
     }
   } catch (err: any) {
     console.error('Error checking product existence:', err)
-    // On error, default to add page
-    navigateTo(`/admin/${route.params.tenant}/products/add?mtProductId=${product.id}`)
+    // On error, default to add page with available data
+    navigateToProductAdd({
+      mtProductId: product.id,
+      productName: product.attributes?.title,
+      productDescription: product.attributes?.description,
+    })
   }
 }
 
@@ -566,7 +647,9 @@ async function performSync() {
       },
     })
     syncResult.value = response
-    // Refresh products after sync
+    // Invalidate cache and refresh products after sync
+    const tenantId = route.params.tenant as string
+    invalidate(`admin:products:${tenantId}`)
     await fetchProducts()
   } catch (err: any) {
     console.error('Error syncing products:', err)
@@ -605,7 +688,23 @@ function handleProductCardClick(productId: string, event: Event) {
   if (target.closest('.z-10') || target.closest('.z-20')) {
     return
   }
-  navigateTo(`/admin/${route.params.tenant}/products/edit/${productId}`)
+  
+  // Find product data to pass along
+  const product = products.value.find(p => p.id === productId)
+  const { navigateToProductEdit, setRouteState } = useAdminNavigation()
+  
+  if (product && product.mtProductId) {
+    // Use MT product ID instead of database UUID
+    const productData = {
+      productName: product.mtProductName,
+      productDescription: product.description,
+    }
+    setRouteState(productData)
+    navigateToProductEdit(product.mtProductId, productData)
+  } else if (product) {
+    // Fallback if mtProductId is missing (shouldn't happen, but be safe)
+    console.warn('Product missing mtProductId, cannot navigate to edit page')
+  }
 }
 
 function toggleProductMenu(productId: string) {
@@ -652,24 +751,51 @@ function viewOnStore(product: any) {
 async function toggleProductVisibility(product: any) {
   closeProductMenu()
   const newVisible = !product.visible
+  
+  // Optimistic update - update UI immediately
+  const productIndex = products.value.findIndex(p => p.id === product.id)
+  if (productIndex !== -1) {
+    products.value[productIndex] = {
+      ...products.value[productIndex],
+      visible: newVisible,
+    }
+  }
+
+  // Update cache optimistically
+  const tenantId = route.params.tenant as string
+  const cacheKey = `admin:products:${tenantId}`
+  const cached = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(cacheKey)
+  if (cached) {
+    const updatedProducts = cached.products.map(p => 
+      p.id === product.id ? { ...p, visible: newVisible } : p
+    )
+    useAdminCache().setCache(cacheKey, {
+      ...cached,
+      products: updatedProducts,
+    })
+  }
+
+  // Sync in background
   try {
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products/${product.id}`, {
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/${product.id}`, {
       method: 'PUT',
       credentials: 'include',
       body: {
         visible: String(newVisible),
       },
     })
-    // Update only the affected product in the list
-    const productIndex = products.value.findIndex(p => p.id === product.id)
+    // Refresh cache with fresh data
+    invalidate(cacheKey)
+    await fetchProducts()
+  } catch (err: any) {
+    console.error('Error toggling product visibility:', err)
+    // Revert optimistic update on error
     if (productIndex !== -1) {
       products.value[productIndex] = {
         ...products.value[productIndex],
-        visible: newVisible,
+        visible: !newVisible,
       }
     }
-  } catch (err: any) {
-    console.error('Error toggling product visibility:', err)
     alert(err.message || 'Failed to update product visibility')
   }
 }
@@ -688,17 +814,45 @@ function closeDeleteModal() {
 async function confirmDelete() {
   if (!productToDelete.value) return
 
+  const productId = productToDelete.value.id
+  const tenantId = route.params.tenant as string
+
+  // Optimistic update - remove from UI immediately
+  const productIndex = products.value.findIndex(p => p.id === productId)
+  const deletedProduct = productToDelete.value
+  if (productIndex !== -1) {
+    products.value.splice(productIndex, 1)
+  }
+
+  // Update cache optimistically
+  const cacheKey = `admin:products:${tenantId}`
+  const cached = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(cacheKey)
+  if (cached) {
+    const updatedProducts = cached.products.filter(p => p.id !== productId)
+    useAdminCache().setCache(cacheKey, {
+      ...cached,
+      products: updatedProducts,
+    })
+  }
+
+  closeDeleteModal()
+
+  // Sync in background
   try {
     deleting.value = true
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products/${productToDelete.value.id}`, {
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/${productId}`, {
       method: 'DELETE',
       credentials: 'include',
     })
-    closeDeleteModal()
-    // Refresh products list
+    // Invalidate and refresh cache
+    invalidate(cacheKey)
     await fetchProducts()
   } catch (err: any) {
     console.error('Error deleting product:', err)
+    // Revert optimistic update on error
+    if (productIndex !== -1) {
+      products.value.splice(productIndex, 0, deletedProduct)
+    }
     alert(err.message || 'Failed to delete product')
   } finally {
     deleting.value = false

@@ -757,6 +757,277 @@ export async function deleteTenantProduct(req: Request, res: Response) {
   }
 }
 
+// GET /admin/:tenant/products/mt/:mtProductId - Get product with variants and images by MT product ID
+export async function getTenantProductByMtId(req: Request, res: Response) {
+  try {
+    const { tenant, mtProductId } = req.params;
+    const result = await validateTenantAndSession(req, tenant);
+    
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    const product = await prisma.product.findFirst({
+      where: { mtProductId, tenantId: tenant },
+      include: {
+        variants: {
+          include: {
+            images: {
+              orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+        images: {
+          orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+        },
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Fetch product name from MT
+    let mtProductName = null;
+    try {
+      const sessionData = result;
+      const productParams = new URLSearchParams({ include: 'product_class' });
+      const mtResponse = await proxyToMarianatek(`products/${product.mtProductId}?${productParams.toString()}`, {
+        mtSubdomain: sessionData.tenant.mtSubdomain,
+        audience: 'admin',
+        accessToken: sessionData.session.accessToken,
+      });
+
+      if (mtResponse.ok) {
+        const mtData = await mtResponse.json();
+        mtProductName = mtData.data?.attributes?.title || null;
+      }
+    } catch (error: any) {
+      console.error('[getTenantProductByMtId] Error fetching MT product name:', error);
+      // Continue without MT product name
+    }
+
+    res.json({
+      product: {
+        ...product,
+        mtProductName,
+        images: product.images.map(img => ({
+          ...img,
+          imageUrl: storage.getImageUrl(img.filename, 'product'),
+        })),
+        variants: product.variants.map(variant => ({
+          ...variant,
+          images: variant.images.map(img => ({
+            ...img,
+            imageUrl: storage.getImageUrl(img.filename, 'variant'),
+          })),
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching product by MT ID:', error);
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+}
+
+// PUT /admin/:tenant/products/mt/:mtProductId - Update product by MT product ID
+export async function putTenantProductByMtId(req: Request, res: Response) {
+  try {
+    const { tenant, mtProductId } = req.params;
+    const result = await validateTenantAndSession(req, tenant);
+    
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    const product = await prisma.product.findFirst({
+      where: { mtProductId, tenantId: tenant },
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const { description, visible, sortOrder } = req.body;
+
+    // Normalize visible to boolean (handle both string and boolean)
+    let visibleValue: boolean | undefined = undefined;
+    if (visible !== undefined) {
+      if (typeof visible === 'string') {
+        visibleValue = visible === 'true' || visible === '1';
+      } else {
+        visibleValue = Boolean(visible);
+      }
+    }
+
+    // Handle image updates if provided
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const imageFiles = files?.images || [];
+    const featuredIndex = req.body.featuredImageIndex ? parseInt(req.body.featuredImageIndex, 10) : -1;
+    const deletedImageIds = req.body.deletedImageIds ? JSON.parse(req.body.deletedImageIds || '[]') : [];
+
+    await prisma.$transaction(async (tx) => {
+      // Delete removed images
+      if (deletedImageIds.length > 0) {
+        const imagesToDelete = await tx.productImage.findMany({
+          where: {
+            id: { in: deletedImageIds },
+            productId: product.id,
+          },
+        });
+
+        for (const img of imagesToDelete) {
+          await storage.deleteImage(img.filename, 'product');
+        }
+
+        await tx.productImage.deleteMany({
+          where: {
+            id: { in: deletedImageIds },
+            productId: product.id,
+          },
+        });
+      }
+
+      // Add new images
+      if (imageFiles.length > 0) {
+        const existingImages = await tx.productImage.findMany({
+          where: { productId: product.id },
+        });
+        const maxSortOrder = existingImages.length > 0 
+          ? Math.max(...existingImages.map(img => img.sortOrder))
+          : -1;
+
+        const imagePromises = imageFiles.map(async (file, index) => {
+          const filename = await storage.saveImage(file.buffer, file.originalname, file.mimetype, 'product');
+          return tx.productImage.create({
+            data: {
+              productId: product.id,
+              variantId: null,
+              filename,
+              originalName: file.originalname,
+              mimeType: file.mimetype,
+              size: file.size,
+              isFeatured: index === featuredIndex || (featuredIndex === -1 && index === 0),
+              sortOrder: maxSortOrder + 1 + index,
+            },
+          });
+        });
+
+        await Promise.all(imagePromises);
+      }
+
+      // Update featured image if specified
+      if (featuredIndex >= 0 && imageFiles.length === 0) {
+        // User is just changing featured flag on existing images
+        const featuredImageId = req.body.featuredImageId;
+        if (featuredImageId) {
+          await tx.productImage.updateMany({
+            where: { productId: product.id },
+            data: { isFeatured: false },
+          });
+          await tx.productImage.update({
+            where: { id: featuredImageId },
+            data: { isFeatured: true },
+          });
+        }
+      }
+
+      // Update product fields
+      await tx.product.update({
+        where: { id: product.id },
+        data: {
+          ...(description !== undefined && { description: description || null }),
+          ...(visibleValue !== undefined && { visible: visibleValue }),
+          ...(sortOrder !== undefined && { sortOrder: sortOrder ? parseInt(String(sortOrder), 10) : null }),
+        },
+      });
+    });
+
+    // Fetch updated product
+    const updatedProduct = await prisma.product.findUnique({
+      where: { id: product.id },
+      include: {
+        images: {
+          orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+        },
+      },
+    });
+
+    res.json({
+      product: {
+        ...updatedProduct,
+        images: updatedProduct!.images.map(img => ({
+          ...img,
+          imageUrl: storage.getImageUrl(img.filename, 'product'),
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error updating product by MT ID:', error);
+    res.status(500).json({ error: 'Failed to update product' });
+  }
+}
+
+// DELETE /admin/:tenant/products/mt/:mtProductId - Delete product by MT product ID
+export async function deleteTenantProductByMtId(req: Request, res: Response) {
+  try {
+    const { tenant, mtProductId } = req.params;
+    const result = await validateTenantAndSession(req, tenant);
+    
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    // Verify product belongs to tenant and fetch with all related data
+    const product = await prisma.product.findFirst({
+      where: { mtProductId, tenantId: tenant },
+      include: {
+        images: true,
+        variants: {
+          include: {
+            images: true,
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Delete all product images from storage
+    for (const image of product.images) {
+      try {
+        await storage.deleteImage(image.filename, 'product');
+      } catch (error: any) {
+        console.error(`Error deleting product image ${image.id}:`, error);
+        // Continue even if image deletion fails
+      }
+    }
+
+    // Delete all variant images from storage
+    for (const variant of product.variants) {
+      for (const image of variant.images) {
+        try {
+          await storage.deleteImage(image.filename, 'variant');
+        } catch (error: any) {
+          console.error(`Error deleting variant image ${image.id}:`, error);
+          // Continue even if image deletion fails
+        }
+      }
+    }
+
+    // Delete product from database (cascade will handle variants and images)
+    await prisma.product.delete({ where: { id: product.id } });
+
+    res.json({ ok: true });
+  } catch (error: any) {
+    console.error('Error deleting product by MT ID:', error);
+    res.status(500).json({ error: 'Failed to delete product' });
+  }
+}
+
 // GET /admin/:tenant/products/:id/variants - Get variants with MT pricing/stock
 export async function getProductVariants(req: Request, res: Response) {
   try {
@@ -834,6 +1105,87 @@ export async function getProductVariants(req: Request, res: Response) {
     res.json({ variants: variantsWithMTData });
   } catch (error: any) {
     console.error('Error fetching variants:', error);
+    res.status(500).json({ error: 'Failed to fetch variants' });
+  }
+}
+
+// GET /admin/:tenant/products/mt/:mtProductId/variants - Get variants with MT pricing/stock by MT product ID
+export async function getProductVariantsByMtId(req: Request, res: Response) {
+  try {
+    const { tenant, mtProductId } = req.params;
+    const { inventory_location } = req.query;
+    
+    const result = await validateTenantAndSession(req, tenant);
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    const product = await prisma.product.findFirst({
+      where: { mtProductId, tenantId: tenant },
+      include: {
+        variants: {
+          include: {
+            images: {
+              orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+            },
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Fetch variant data from MT for pricing/stock
+    const sessionData = result;
+    const variantIds = product.variants.map(v => v.mtVariantId);
+    
+    const variantsWithMTData = await Promise.all(
+      product.variants.map(async (variant) => {
+        try {
+          const params = new URLSearchParams({});
+          if (inventory_location) {
+            params.append('inventory_location', String(inventory_location));
+          }
+
+          const mtResponse = await proxyToMarianatek(`product_variants/${variant.mtVariantId}?${params.toString()}`, {
+            mtSubdomain: sessionData.tenant.mtSubdomain,
+            audience: 'admin',
+            accessToken: sessionData.session.accessToken,
+          });
+
+          let mtData = null;
+          if (mtResponse.ok) {
+            const mtResponseData = await mtResponse.json();
+            mtData = mtResponseData.data;
+          }
+
+          return {
+            ...variant,
+            images: variant.images.map(img => ({
+              ...img,
+              imageUrl: storage.getImageUrl(img.filename, 'variant'),
+            })),
+            mtData, // Include MT pricing/stock data
+          };
+        } catch (error) {
+          console.error(`Error fetching MT data for variant ${variant.id}:`, error);
+          return {
+            ...variant,
+            images: variant.images.map(img => ({
+              ...img,
+              imageUrl: storage.getImageUrl(img.filename, 'variant'),
+            })),
+            mtData: null,
+          };
+        }
+      })
+    );
+
+    res.json({ variants: variantsWithMTData });
+  } catch (error: any) {
+    console.error('Error fetching variants by MT ID:', error);
     res.status(500).json({ error: 'Failed to fetch variants' });
   }
 }
@@ -1034,6 +1386,208 @@ export async function putProductVariant(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Error updating variant:', error);
+    res.status(500).json({ error: 'Failed to update variant' });
+  }
+}
+
+// GET /admin/:tenant/products/mt/:mtProductId/variants/:mtVariantId - Get single variant with MT data by MT IDs
+export async function getProductVariantByMtId(req: Request, res: Response) {
+  try {
+    const { tenant, mtProductId, mtVariantId } = req.params;
+    const { inventory_location } = req.query;
+    
+    const result = await validateTenantAndSession(req, tenant);
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    const variant = await prisma.productVariant.findFirst({
+      where: { 
+        mtVariantId,
+        product: {
+          mtProductId,
+          tenantId: tenant,
+        },
+      },
+      include: {
+        product: true,
+        images: {
+          orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+        },
+      },
+    });
+
+    if (!variant || !variant.product) {
+      return res.status(404).json({ error: 'Variant not found' });
+    }
+
+    // Fetch MT data for pricing/stock
+    const sessionData = result;
+    const params = new URLSearchParams({});
+    if (inventory_location) {
+      params.append('inventory_location', String(inventory_location));
+    }
+
+    const mtResponse = await proxyToMarianatek(`product_variants/${variant.mtVariantId}?${params.toString()}`, {
+      mtSubdomain: sessionData.tenant.mtSubdomain,
+      audience: 'admin',
+      accessToken: sessionData.session.accessToken,
+    });
+
+    let mtData = null;
+    if (mtResponse.ok) {
+      const mtResponseData = await mtResponse.json();
+      mtData = mtResponseData.data;
+    }
+
+    res.json({
+      variant: {
+        ...variant,
+        images: variant.images.map(img => ({
+          ...img,
+          imageUrl: storage.getImageUrl(img.filename, 'variant'),
+        })),
+        mtData,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching variant by MT ID:', error);
+    res.status(500).json({ error: 'Failed to fetch variant' });
+  }
+}
+
+// PUT /admin/:tenant/products/mt/:mtProductId/variants/:mtVariantId - Update variant by MT IDs
+export async function putProductVariantByMtId(req: Request, res: Response) {
+  try {
+    const { tenant, mtProductId, mtVariantId } = req.params;
+    const result = await validateTenantAndSession(req, tenant);
+    
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    const variant = await prisma.productVariant.findFirst({
+      where: { 
+        mtVariantId,
+        product: {
+          mtProductId,
+          tenantId: tenant,
+        },
+      },
+      include: {
+        product: true,
+      },
+    });
+
+    if (!variant || !variant.product) {
+      return res.status(404).json({ error: 'Variant not found' });
+    }
+
+    const { description, visible, sortOrder } = req.body;
+
+    // Handle image updates
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const imageFiles = files?.images || [];
+    const featuredIndex = req.body.featuredImageIndex ? parseInt(req.body.featuredImageIndex, 10) : -1;
+    const deletedImageIds = req.body.deletedImageIds ? JSON.parse(req.body.deletedImageIds || '[]') : [];
+
+    await prisma.$transaction(async (tx) => {
+      // Delete removed images
+      if (deletedImageIds.length > 0) {
+        const imagesToDelete = await tx.productImage.findMany({
+          where: {
+            id: { in: deletedImageIds },
+            variantId: variant.id,
+          },
+        });
+
+        for (const img of imagesToDelete) {
+          await storage.deleteImage(img.filename, 'variant');
+        }
+
+        await tx.productImage.deleteMany({
+          where: {
+            id: { in: deletedImageIds },
+            variantId: variant.id,
+          },
+        });
+      }
+
+      // Add new images
+      if (imageFiles.length > 0) {
+        const existingImages = await tx.productImage.findMany({
+          where: { variantId: variant.id },
+        });
+        const maxSortOrder = existingImages.length > 0 
+          ? Math.max(...existingImages.map(img => img.sortOrder))
+          : -1;
+
+        const imagePromises = imageFiles.map(async (file, index) => {
+          const filename = await storage.saveImage(file.buffer, file.originalname, file.mimetype, 'variant');
+          return tx.productImage.create({
+            data: {
+              productId: null,
+              variantId: variant.id,
+              filename,
+              originalName: file.originalname,
+              mimeType: file.mimetype,
+              size: file.size,
+              isFeatured: index === featuredIndex || (featuredIndex === -1 && index === 0),
+              sortOrder: maxSortOrder + 1 + index,
+            },
+          });
+        });
+
+        await Promise.all(imagePromises);
+      }
+
+      // Update featured image if specified
+      if (featuredIndex >= 0 && imageFiles.length === 0) {
+        const featuredImageId = req.body.featuredImageId;
+        if (featuredImageId) {
+          await tx.productImage.updateMany({
+            where: { variantId: variant.id },
+            data: { isFeatured: false },
+          });
+          await tx.productImage.update({
+            where: { id: featuredImageId },
+            data: { isFeatured: true },
+          });
+        }
+      }
+
+      // Update variant fields
+      await tx.productVariant.update({
+        where: { id: variant.id },
+        data: {
+          ...(description !== undefined && { description: description || null }),
+          ...(visible !== undefined && { visible: visible === 'true' }),
+          ...(sortOrder !== undefined && { sortOrder: sortOrder ? parseInt(String(sortOrder), 10) : null }),
+        },
+      });
+    });
+
+    // Fetch updated variant
+    const updatedVariant = await prisma.productVariant.findUnique({
+      where: { id: variant.id },
+      include: {
+        images: {
+          orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+        },
+      },
+    });
+
+    res.json({
+      variant: {
+        ...updatedVariant,
+        images: updatedVariant!.images.map(img => ({
+          ...img,
+          imageUrl: storage.getImageUrl(img.filename, 'variant'),
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error updating variant by MT ID:', error);
     res.status(500).json({ error: 'Failed to update variant' });
   }
 }

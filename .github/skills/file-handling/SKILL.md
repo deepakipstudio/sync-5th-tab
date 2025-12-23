@@ -141,3 +141,5 @@ uploads/
 - File URLs: `/uploads/{type}/{filename}`
 - Always validate file type and size before saving
 
+
+

@@ -4,73 +4,73 @@
     <div class="flex items-center gap-4">
       <button
         @click="navigateTo(`/admin/${route.params.tenant}/products`)"
-        class="text-gray-600 hover:text-gray-900"
+        class="text-admin-text-secondary hover:text-admin-text-primary"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900">
+        <h1 class="text-2xl font-semibold text-admin-text-primary">
           <span v-if="mtProductName">Editing {{ mtProductName }}</span>
           <span v-else-if="product?.mtProductId">Editing Product #{{ product.mtProductId }}</span>
           <span v-else>Edit Product</span>
         </h1>
-        <p class="text-sm text-gray-500 mt-1">ID: {{ product?.mtProductId || 'N/A' }}</p>
+        <p class="text-sm text-admin-text-secondary mt-1">ID: {{ product?.mtProductId || 'N/A' }}</p>
       </div>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="space-y-6 animate-pulse">
       <!-- Product Images Skeleton -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="h-6 bg-gray-200 rounded w-40 mb-4"></div>
-        <div class="h-32 bg-gray-200 rounded mb-4"></div>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <div class="h-6 bg-admin-surface-raised rounded w-40 mb-4"></div>
+        <div class="h-32 bg-admin-surface-raised rounded mb-4"></div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div
             v-for="i in 4"
             :key="i"
-            class="aspect-square bg-gray-200 rounded-lg"
+            class="aspect-square bg-admin-surface-raised rounded-lg"
           ></div>
         </div>
       </div>
       
       <!-- Product Name Skeleton -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="h-6 bg-gray-200 rounded w-40 mb-4"></div>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <div class="h-6 bg-admin-surface-raised rounded w-40 mb-4"></div>
         <div class="space-y-4">
           <div>
-            <div class="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-            <div class="h-10 bg-gray-200 rounded"></div>
-            <div class="h-3 bg-gray-200 rounded w-24 mt-1"></div>
+            <div class="h-4 bg-admin-surface-raised rounded w-32 mb-2"></div>
+            <div class="h-10 bg-admin-surface-raised rounded"></div>
+            <div class="h-3 bg-admin-surface-raised rounded w-24 mt-1"></div>
           </div>
         </div>
       </div>
       
       <!-- Product Description Skeleton -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="h-6 bg-gray-200 rounded w-40 mb-4"></div>
-        <div class="h-24 bg-gray-200 rounded"></div>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <div class="h-6 bg-admin-surface-raised rounded w-40 mb-4"></div>
+        <div class="h-24 bg-admin-surface-raised rounded"></div>
       </div>
       
       <!-- Variants Skeleton -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <div class="h-6 bg-admin-surface-raised rounded w-32 mb-4"></div>
         <div class="space-y-4">
           <div
             v-for="i in 3"
             :key="i"
-            class="bg-white border border-gray-200 rounded-lg overflow-hidden"
+            class="bg-admin-surface-base border border-admin-border rounded-lg overflow-hidden"
           >
-            <div class="p-4 border-b border-gray-100 bg-gray-50">
-              <div class="h-5 bg-gray-200 rounded w-48 mb-1"></div>
-              <div class="h-3 bg-gray-200 rounded w-32"></div>
+            <div class="p-4 border-b border-admin-border-subtle bg-admin-surface-raised">
+              <div class="h-5 bg-admin-surface-raised rounded w-48 mb-1"></div>
+              <div class="h-3 bg-admin-surface-raised rounded w-32"></div>
             </div>
             <div class="p-4">
-              <div class="h-4 bg-gray-200 rounded w-40 mb-3"></div>
+              <div class="h-4 bg-admin-surface-raised rounded w-40 mb-3"></div>
               <div class="space-y-2">
-                <div class="h-4 bg-gray-200 rounded w-full"></div>
-                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-admin-surface-raised rounded w-full"></div>
+                <div class="h-4 bg-admin-surface-raised rounded w-3/4"></div>
               </div>
             </div>
           </div>
@@ -79,27 +79,27 @@
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
       {{ error }}
     </div>
 
     <!-- Form -->
     <form v-else @submit.prevent="saveProduct" class="space-y-6">
       <!-- Product Images -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Product Images</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Product Images</h2>
         
         <!-- Image Upload Area -->
         <div
-          class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
+          class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-admin-border border-dashed rounded-md"
           @dragover.prevent="handleDragOver"
           @dragleave.prevent="handleDragLeave"
           @drop.prevent="handleDrop"
-          :class="{ 'border-gray-900 bg-gray-50': isDragging }"
+          :class="{ 'border-admin-brand-strong bg-admin-surface-hover': isDragging }"
         >
           <div class="space-y-1 text-center">
             <svg
-              class="mx-auto h-12 w-12 text-gray-400"
+              class="mx-auto h-12 w-12 text-admin-text-muted"
               stroke="currentColor"
               fill="none"
               viewBox="0 0 48 48"
@@ -111,8 +111,8 @@
                 stroke-linejoin="round"
               />
             </svg>
-            <div class="flex text-sm text-gray-600">
-              <label class="relative cursor-pointer rounded-md font-medium text-gray-900 hover:text-gray-700">
+            <div class="flex text-sm text-admin-text-secondary">
+              <label class="relative cursor-pointer rounded-md font-medium text-admin-text-primary hover:text-admin-text-primary">
                 <span>Upload images</span>
                 <input
                   ref="fileInput"
@@ -125,7 +125,7 @@
               </label>
               <p class="pl-1">or drag and drop</p>
             </div>
-            <p class="text-xs text-gray-500">PNG, JPG, GIF, WebP up to 2MB each</p>
+            <p class="text-xs text-admin-text-secondary">PNG, JPG, GIF, WebP up to 2MB each</p>
           </div>
         </div>
 
@@ -136,7 +136,7 @@
             :key="img.id"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-gray-200'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-admin-brand-strong' : 'border-admin-border'">
               <img
                 :src="getFullImageUrl(img.imageUrl)"
                 :alt="`Product image`"
@@ -146,7 +146,7 @@
             <button
               type="button"
               @click="markImageForDeletion(img.id)"
-              class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -156,7 +156,7 @@
               type="button"
               @click="setFeaturedExistingImage(img.id)"
               class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'"
+              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
             </button>
@@ -170,7 +170,7 @@
             :key="`new-${index}`"
             class="relative group"
           >
-            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-gray-900' : 'border-gray-200'">
+            <div class="aspect-square rounded-lg overflow-hidden border-2" :class="img.isFeatured ? 'border-admin-brand-strong' : 'border-admin-border'">
               <img
                 :src="img.preview"
                 :alt="`New image ${index + 1}`"
@@ -180,7 +180,7 @@
             <button
               type="button"
               @click="removeNewImage(index)"
-              class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -190,7 +190,7 @@
               type="button"
               @click="setFeaturedNewImage(index)"
               class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'"
+              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
             </button>
@@ -199,40 +199,40 @@
       </div>
 
       <!-- Product Name -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Product Information</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Product Information</h2>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label class="block text-sm font-medium text-admin-text-primary mb-1">
               Product Name
             </label>
             <input
               :value="mtProductName || ''"
               type="text"
               disabled
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-600 cursor-not-allowed"
+              class="w-full border border-admin-border rounded-lg px-3 py-2 bg-admin-surface-raised text-admin-text-secondary cursor-not-allowed"
             />
-            <p class="text-xs text-gray-500 mt-1">ID: {{ product?.mtProductId || 'N/A' }}</p>
+            <p class="text-xs text-admin-text-secondary mt-1">ID: {{ product?.mtProductId || 'N/A' }}</p>
           </div>
         </div>
       </div>
 
       <!-- Product Description -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Product Description</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Product Description</h2>
         <textarea
           v-model="form.description"
           rows="4"
           placeholder="Enter product description..."
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+          class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
         />
       </div>
 
       <!-- Variants List -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Variants ({{ variants.length }})</h2>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Variants ({{ variants.length }})</h2>
         
-        <div v-if="loadingVariants" class="text-center py-4 text-gray-500">
+        <div v-if="loadingVariants" class="text-center py-4 text-admin-text-secondary">
           Loading variants...
         </div>
         
@@ -240,19 +240,19 @@
           <div
             v-for="variant in variants"
             :key="variant.id"
-            class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+            class="bg-admin-surface-base border border-admin-border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
           >
             <!-- Variant Header -->
-            <div class="p-4 border-b border-gray-100 bg-gray-50">
+            <div class="p-4 border-b border-admin-border-subtle bg-admin-surface-raised">
               <div class="flex items-start justify-between">
                 <div class="flex-1">
-                  <h3 class="font-semibold text-gray-900">{{ variant.sku || 'Untitled Variant' }}</h3>
-                  <p class="text-xs text-gray-500 mt-0.5">MT Variant ID: {{ variant.mtVariantId }}</p>
+                  <h3 class="font-semibold text-admin-text-primary">{{ variant.sku || 'Untitled Variant' }}</h3>
+                  <p class="text-xs text-admin-text-secondary mt-0.5">MT Variant ID: {{ variant.mtVariantId }}</p>
                 </div>
                 <button
                   type="button"
                   @click="navigateTo(`/admin/${route.params.tenant}/products/variants/edit/${product?.id}/${variant.id}`)"
-                  class="text-sm font-medium text-gray-700 hover:text-gray-900 px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  class="text-sm font-medium text-admin-text-primary hover:text-admin-text-primary px-3 py-1.5 bg-admin-surface-base border border-admin-border rounded-lg hover:bg-admin-surface-raised transition-colors"
                 >
                   Edit →
                 </button>
@@ -263,9 +263,9 @@
             <div v-if="variant.mtData" class="p-4">
               <div class="space-y-3">
                 <!-- Base Price -->
-                <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                  <span class="text-sm font-medium text-gray-700">Base Price (All locations)</span>
-                  <span class="text-lg font-semibold text-gray-900">${{ variant.mtData.attributes?.price || '0.00' }}</span>
+                <div class="flex items-center justify-between py-2 border-b border-admin-border-subtle">
+                  <span class="text-sm font-medium text-admin-text-primary">Base Price (All locations)</span>
+                  <span class="text-lg font-semibold text-admin-text-primary">${{ variant.mtData.attributes?.price || '0.00' }}</span>
                 </div>
 
                 <!-- Location Overrides -->
@@ -273,7 +273,7 @@
                   <button
                     type="button"
                     @click="toggleLocationDetails(variant.id)"
-                    class="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 py-2"
+                    class="w-full flex items-center justify-between text-sm font-medium text-admin-text-primary hover:text-admin-text-primary py-2"
                   >
                     <span>Location-specific Pricing</span>
                     <svg
@@ -289,31 +289,31 @@
                   
                   <div
                     v-show="expandedVariants.includes(variant.id)"
-                    class="mt-2 space-y-3 pt-2 border-t border-gray-100"
+                    class="mt-2 space-y-3 pt-2 border-t border-admin-border-subtle"
                   >
                     <div
                       v-for="region in variant.mtData.attributes.region_overrides"
                       :key="region.id"
-                      class="bg-gray-50 rounded-lg p-3"
+                      class="bg-admin-surface-raised rounded-lg p-3"
                     >
-                      <div class="font-medium text-gray-900 mb-2 text-sm">{{ region.name }}</div>
+                      <div class="font-medium text-admin-text-primary mb-2 text-sm">{{ region.name }}</div>
                       <div class="space-y-2">
                         <div
                           v-for="location in region.location_overrides"
                           :key="location.id"
-                          class="flex items-center justify-between text-sm bg-white rounded p-2 border border-gray-200"
+                          class="flex items-center justify-between text-sm bg-admin-surface-base rounded p-2 border border-admin-border"
                         >
                           <div class="flex-1">
-                            <div class="font-medium text-gray-900">{{ location.name }}</div>
-                            <div class="text-xs text-gray-500 mt-0.5">
+                            <div class="font-medium text-admin-text-primary">{{ location.name }}</div>
+                            <div class="text-xs text-admin-text-secondary mt-0.5">
                               Stock: {{ location.present_quantity ?? 'N/A' }}
                             </div>
                           </div>
                           <div class="text-right">
-                            <div class="font-semibold text-gray-900">${{ location.price }}</div>
+                            <div class="font-semibold text-admin-text-primary">${{ location.price }}</div>
                             <div
                               v-if="location.price !== variant.mtData.attributes?.price"
-                              class="text-xs text-amber-600 mt-0.5"
+                              class="text-xs text-admin-state-warning-text mt-0.5"
                             >
                               Different from base
                             </div>
@@ -325,7 +325,7 @@
                 </div>
               </div>
             </div>
-            <div v-else class="p-4 text-sm text-gray-500">
+            <div v-else class="p-4 text-sm text-admin-text-secondary">
               Loading pricing data...
             </div>
           </div>
@@ -333,7 +333,7 @@
       </div>
 
       <!-- Form Error -->
-      <div v-if="formError" class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+      <div v-if="formError" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
         {{ formError }}
       </div>
 
@@ -342,14 +342,14 @@
         <button
           type="button"
           @click="navigateTo(`/admin/${route.params.tenant}/products`)"
-          class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+          class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           :disabled="saving"
-          class="flex-1 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex-1 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save Changes' }}
         </button>
@@ -364,8 +364,10 @@ definePageMeta({ layout: 'admin' })
 const route = useRoute()
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
+const { getRouteState } = useAdminNavigation()
+const { fetchWithCache, invalidate } = useAdminCache()
 
-const loading = ref(true)
+const loading = ref(false) // Start as false - only show if no cache
 const loadingVariants = ref(false)
 const error = ref<string | null>(null)
 const saving = ref(false)
@@ -388,26 +390,104 @@ const isDragging = ref(false)
 const featuredImageId = ref<string | null>(null)
 const expandedVariants = ref<string[]>([])
 
-// Fetch product
-async function fetchProduct() {
-  try {
-    loading.value = true
-    error.value = null
-    
-    const response = await $fetch<{ product: any }>(`${backendUrl}/admin/${route.params.tenant}/products/${route.params.id}`, {
-      credentials: 'include',
-    })
+// Initialize with route state or cache
+const routeState = getRouteState<{
+  mtProductId?: string
+  productName?: string
+  productDescription?: string
+}>()
 
-    product.value = response.product
-    mtProductName.value = response.product.mtProductName || null
-    existingImages.value = response.product.images || []
-    form.value.description = response.product.description || ''
-    form.value.visible = response.product.visible
+// Try to get product from products list cache first
+const tenantId = route.params.tenant as string
+const mtProductId = route.params.mtProductId as string // Changed from productId to mtProductId
+const productsCacheKey = `admin:products:${tenantId}`
+const cachedProducts = useAdminCache().getCached<{ products: any[]; mtSubdomain?: string }>(productsCacheKey)
+
+if (cachedProducts?.products) {
+  // Look up by MT product ID instead of database UUID
+  const cachedProduct = cachedProducts.products.find(p => p.mtProductId === mtProductId)
+  if (cachedProduct) {
+    // Use cached product data immediately
+    product.value = cachedProduct
+    mtProductName.value = cachedProduct.mtProductName || null
+    form.value.description = cachedProduct.description || ''
+    form.value.visible = cachedProduct.visible
+    existingImages.value = cachedProduct.images || []
+  }
+}
+
+// Also check route state
+if (routeState && !product.value) {
+  product.value = {
+    mtProductId: routeState.mtProductId || mtProductId,
+    mtProductName: routeState.productName,
+    description: routeState.productDescription,
+  }
+  mtProductName.value = routeState.productName || null
+  form.value.description = routeState.productDescription || ''
+}
+
+// Fetch product with cache-first strategy
+async function fetchProduct() {
+  // Use MT product ID for cache key
+  const cacheKey = `admin:product:${tenantId}:${mtProductId}`
+  const ttl = 5 * 60 * 1000 // 5 minutes
+
+  // Check cache first
+  const cached = useAdminCache().getCached<{ product: any }>(cacheKey)
+  if (cached?.product) {
+    // Show cached data immediately
+    product.value = cached.product
+    mtProductName.value = cached.product.mtProductName || null
+    existingImages.value = cached.product.images || []
+    form.value.description = cached.product.description || ''
+    form.value.visible = cached.product.visible
+    loading.value = false
+  } else if (!product.value) {
+    // Only show loading if we don't have any data
+    loading.value = true
+  }
+
+  error.value = null
+
+  try {
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        // Use new MT-based endpoint
+        const response = await $fetch<{ product: any }>(`${backendUrl}/admin/${tenantId}/products/mt/${mtProductId}`, {
+          credentials: 'include',
+        })
+        return { product: response.product }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: { product: any }) => {
+          // Update UI when fresh data arrives
+          product.value = freshData.product
+          mtProductName.value = freshData.product.mtProductName || null
+          existingImages.value = freshData.product.images || []
+          form.value.description = freshData.product.description || ''
+          form.value.visible = freshData.product.visible
+        },
+      }
+    )
+
+    // Update with fresh data
+    product.value = data.product
+    mtProductName.value = data.product.mtProductName || null
+    existingImages.value = data.product.images || []
+    form.value.description = data.product.description || ''
+    form.value.visible = data.product.visible
 
     // Fetch variants with MT data
     await fetchVariants()
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch product'
+    // If we have cached data, keep showing it even on error
+    if (!cached && !product.value) {
+      product.value = null
+    }
   } finally {
     loading.value = false
   }
@@ -415,14 +495,41 @@ async function fetchProduct() {
 
 // Fetch variants with MT pricing/stock
 async function fetchVariants() {
-  try {
+  const cacheKey = `admin:product-variants:${tenantId}:${mtProductId}`
+  const ttl = 1 * 60 * 1000 // Shorter TTL for variants as stock/price can change
+
+  // Check cache first
+  const cached = useAdminCache().getCached<{ variants: any[] }>(cacheKey)
+  if (cached?.variants) {
+    variants.value = cached.variants
+    loadingVariants.value = false
+  } else {
     loadingVariants.value = true
-    const response = await $fetch<{ variants: any[] }>(`${backendUrl}/admin/${route.params.tenant}/products/${route.params.id}/variants`, {
-      credentials: 'include',
-    })
-    variants.value = response.variants || []
+  }
+
+  try {
+    const data = await fetchWithCache(
+      cacheKey,
+      async () => {
+        // Use new MT-based variants endpoint
+        const response = await $fetch<{ variants: any[] }>(`${backendUrl}/admin/${tenantId}/products/mt/${mtProductId}/variants`, {
+          credentials: 'include',
+        })
+        return { variants: response.variants }
+      },
+      {
+        ttl,
+        onBackgroundUpdate: (freshData: { variants: any[] }) => {
+          variants.value = freshData.variants || []
+        },
+      }
+    )
+    variants.value = data.variants || []
   } catch (err: any) {
     console.error('Error fetching variants:', err)
+    if (!cached) {
+      variants.value = []
+    }
   } finally {
     loadingVariants.value = false
   }
@@ -549,11 +656,16 @@ async function saveProduct() {
       formData.append('featuredImageIndex', String(featuredIndex))
     }
 
-    await $fetch(`${backendUrl}/admin/${route.params.tenant}/products/${route.params.id}`, {
+    // Use new MT-based endpoint
+    await $fetch(`${backendUrl}/admin/${tenantId}/products/mt/${mtProductId}`, {
       method: 'PUT',
       credentials: 'include',
       body: formData,
     })
+
+    // Invalidate caches - use MT product ID
+    invalidate(`admin:product:${tenantId}:${mtProductId}`)
+    invalidate(`admin:products:${tenantId}`)
 
     // Refresh product data
     await fetchProduct()

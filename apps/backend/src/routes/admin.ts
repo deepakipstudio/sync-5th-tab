@@ -236,3 +236,72 @@ export async function deleteTenantBanner(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to delete banner' });
   }
 }
+
+// GET /admin/:tenant/store-settings -> get tenant store settings (brand colors, banners)
+export async function getStoreSettings(req: Request, res: Response) {
+  try {
+    const { tenant } = req.params;
+    const dbTenant = await validateTenant(tenant);
+    if (!dbTenant) return res.status(404).json({ error: 'tenant not found' });
+
+    // Get banners
+    const banners = await prisma.banner.findMany({
+      where: { tenantId: dbTenant.id },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    const bannersWithUrl = banners.map(banner => ({
+      ...banner,
+      imageUrl: storage.getFileUrl(banner.filename),
+    }));
+
+    res.json({
+      brandSettings: {
+        primaryBrandColor: dbTenant.primaryBrandColor,
+        secondaryBrandColor: dbTenant.secondaryBrandColor,
+      },
+      banners: bannersWithUrl,
+    });
+  } catch (error: any) {
+    console.error('Error fetching store settings:', error);
+    res.status(500).json({ error: 'Failed to fetch store settings' });
+  }
+}
+
+// PUT /admin/:tenant/store-settings/brand -> update brand colors
+export async function updateBrandSettings(req: Request, res: Response) {
+  try {
+    const { tenant } = req.params;
+    const dbTenant = await validateTenant(tenant);
+    if (!dbTenant) return res.status(404).json({ error: 'tenant not found' });
+
+    const { primaryBrandColor, secondaryBrandColor } = req.body;
+
+    // Validate color format (optional, can be null)
+    const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (primaryBrandColor && !colorRegex.test(primaryBrandColor)) {
+      return res.status(400).json({ error: 'Invalid primary brand color format' });
+    }
+    if (secondaryBrandColor && !colorRegex.test(secondaryBrandColor)) {
+      return res.status(400).json({ error: 'Invalid secondary brand color format' });
+    }
+
+    const updated = await prisma.tenant.update({
+      where: { id: dbTenant.id },
+      data: {
+        primaryBrandColor: primaryBrandColor || null,
+        secondaryBrandColor: secondaryBrandColor || null,
+      },
+    });
+
+    res.json({
+      brandSettings: {
+        primaryBrandColor: updated.primaryBrandColor,
+        secondaryBrandColor: updated.secondaryBrandColor,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error updating brand settings:', error);
+    res.status(500).json({ error: 'Failed to update brand settings' });
+  }
+}

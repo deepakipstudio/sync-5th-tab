@@ -11,6 +11,8 @@ import {
   postTenantBanner,
   putTenantBanner,
   deleteTenantBanner,
+  getStoreSettings,
+  updateBrandSettings,
   uploadBannerImage,
   handleMulterError,
   uploadProductImages,
@@ -23,14 +25,20 @@ import {
   getTenantProduct,
   putTenantProduct,
   deleteTenantProduct,
+  getTenantProductByMtId,
+  putTenantProductByMtId,
+  deleteTenantProductByMtId,
   getProductVariants,
+  getProductVariantsByMtId,
   getProductVariant,
   putProductVariant,
+  getProductVariantByMtId,
+  putProductVariantByMtId,
   syncProducts,
   checkProductExists,
 } from './routes/products';
 import { getMe } from './routes/me';
-import { getTenantInfo } from './routes/tenantInfo';
+import { getTenantInfo, getTenantBranding } from './routes/tenantInfo';
 import { getAdminAccount } from './routes/account';
 import { debugMTEndpoints } from './routes/debug';
 
@@ -53,12 +61,17 @@ app.get('/me', getMe);
 
 // Tenant info
 app.get('/tenants/:id', getTenantInfo);
+app.get('/tenants/:id/branding', getTenantBranding);
 
 // Tenant/customer routes
 app.get('/:tenant/products', getTenantProducts);
 
 // Admin routes
 app.get('/admin/:tenant/account', getAdminAccount);
+
+// Store settings routes
+app.get('/admin/:tenant/store-settings', getStoreSettings);
+app.put('/admin/:tenant/store-settings/brand', updateBrandSettings);
 
 // Banner routes
 app.get('/admin/:tenant/banners', getTenantBanners);
@@ -73,6 +86,14 @@ app.get('/admin/:tenant/products/mt/search', searchMTProducts);
 app.get('/admin/:tenant/products/check/:mtProductId', checkProductExists);
 app.get('/admin/:tenant/products/add', getMTProductForAdd);
 app.post('/admin/:tenant/products', uploadProductImages, handleMulterError, postTenantProduct);
+// MT product ID-based routes (new)
+app.get('/admin/:tenant/products/mt/:mtProductId', getTenantProductByMtId);
+app.put('/admin/:tenant/products/mt/:mtProductId', uploadProductImages, handleMulterError, putTenantProductByMtId);
+app.delete('/admin/:tenant/products/mt/:mtProductId', deleteTenantProductByMtId);
+app.get('/admin/:tenant/products/mt/:mtProductId/variants', getProductVariantsByMtId);
+app.get('/admin/:tenant/products/mt/:mtProductId/variants/:mtVariantId', getProductVariantByMtId);
+app.put('/admin/:tenant/products/mt/:mtProductId/variants/:mtVariantId', uploadProductImages, handleMulterError, putProductVariantByMtId);
+// UUID-based routes (kept for backward compatibility)
 app.get('/admin/:tenant/products/:id', getTenantProduct);
 app.put('/admin/:tenant/products/:id', uploadProductImages, handleMulterError, putTenantProduct);
 app.delete('/admin/:tenant/products/:id', deleteTenantProduct);

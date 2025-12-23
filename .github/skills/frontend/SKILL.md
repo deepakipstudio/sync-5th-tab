@@ -8,6 +8,7 @@ Nuxt 4 SPA application using Vue 3 Composition API. Admin interface with multi-t
 - Vue 3 Composition API with `<script setup>`
 - Tailwind CSS
 - TypeScript
+- Pinia (for admin caching)
 - `$fetch` for API calls (not `useFetch`)
 
 ## Configuration
@@ -17,6 +18,7 @@ Nuxt 4 SPA application using Vue 3 Composition API. Admin interface with multi-t
 - SPA mode: `ssr: false` (required for cookie-based auth)
 - Runtime config: `config.public.backendUrl` for API calls
 - Tailwind module: `@nuxtjs/tailwindcss`
+- Pinia module: `@pinia/nuxt` (for admin caching)
 
 ```typescript
 const config = useRuntimeConfig()
@@ -53,6 +55,19 @@ Simple tenant state.
 ```typescript
 const { tenant } = useTenant()
 ```
+
+### useAdminCache()
+
+Pinia-based caching for admin backend UI. Provides cache-first fetching with background refresh.
+
+```typescript
+const { fetchWithCache, invalidate, getCached } = useAdminCache()
+
+// Cache-first fetching
+const data = await fetchWithCache('admin:products:tenant-123', fetcher, { ttl: 5 * 60 * 1000 })
+```
+
+**See:** `.github/skills/caching/SKILL.md` for complete documentation.
 
 ## Routing
 
@@ -125,7 +140,9 @@ try {
 
 ## State Management
 
-Use Nuxt's `useState()` for reactive state (not Pinia/Vuex).
+### General State
+
+Use Nuxt's `useState()` for reactive state in components.
 
 ```typescript
 const loading = useState<boolean>('loading', () => false)
@@ -134,6 +151,21 @@ const products = useState<any[]>('products', () => [])
 loading.value = true
 products.value = data
 ```
+
+### Admin Caching
+
+For admin backend UI, use Pinia-based caching via `useAdminCache()` composable.
+
+```typescript
+import { useAdminCache } from '~/composables/useAdminCache'
+
+const { fetchWithCache, invalidate } = useAdminCache()
+
+// Cache-first fetching
+const data = await fetchWithCache('admin:products:tenant-123', fetcher, { ttl: 5 * 60 * 1000 })
+```
+
+**See:** `.github/skills/caching/SKILL.md` for complete caching documentation.
 
 ## File Locations
 
