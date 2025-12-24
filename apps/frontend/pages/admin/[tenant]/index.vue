@@ -6,15 +6,16 @@
         <h1 class="text-2xl font-semibold text-admin-text-primary">{{ tenantName || 'Dashboard' }}</h1>
         <p class="text-sm text-admin-text-secondary mt-1">Welcome to your admin dashboard</p>
       </div>
-      <button
+      <UiButton
         @click="logout"
-        class="inline-flex items-center gap-2 bg-admin-state-danger-text text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
+        variant="danger"
+        class="inline-flex items-center gap-2"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
         </svg>
         Logout
-      </button>
+      </UiButton>
     </div>
 
     <!-- Quick Actions Grid -->
