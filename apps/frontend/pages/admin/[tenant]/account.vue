@@ -2,53 +2,55 @@
   <div class="space-y-8">
     <!-- Header -->
     <div>
-      <h1 class="text-2xl font-semibold text-admin-text-primary">Account</h1>
-      <p class="text-sm text-admin-text-secondary mt-1">View your account details and settings</p>
+      <h1 class="text-3xl font-semibold text-admin-text-primary">Account</h1>
+      <p class="text-sm text-admin-text-secondary mt-2">View your account details and settings</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="space-y-8">
       <!-- Tenant Info Skeleton -->
-      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6 animate-pulse">
-        <div class="h-6 bg-admin-surface-raised rounded w-1/3 mb-6"></div>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <UiSkeleton class="h-6 w-1/3 mb-6" />
         <div class="space-y-4">
           <div class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
-            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
-            <div class="h-4 bg-admin-surface-raised rounded w-3/4 col-span-2"></div>
+            <UiSkeleton class="h-4 w-1/4" />
+            <UiSkeleton class="h-4 w-3/4 col-span-2" />
           </div>
           <div class="grid grid-cols-3 gap-4 py-3 border-b border-admin-border-subtle">
-            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
-            <div class="h-4 bg-admin-surface-raised rounded w-3/4 col-span-2"></div>
+            <UiSkeleton class="h-4 w-1/4" />
+            <UiSkeleton class="h-4 w-3/4 col-span-2" />
           </div>
           <div class="grid grid-cols-3 gap-4 py-3">
-            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
-            <div class="h-4 bg-admin-surface-raised rounded w-3/4 col-span-2"></div>
+            <UiSkeleton class="h-4 w-1/4" />
+            <UiSkeleton class="h-4 w-3/4 col-span-2" />
           </div>
         </div>
       </div>
       <!-- Session Info Skeleton -->
-      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6 animate-pulse">
-        <div class="h-6 bg-admin-surface-raised rounded w-1/4 mb-6"></div>
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <UiSkeleton class="h-6 w-1/4 mb-6" />
         <div class="space-y-4">
           <div class="grid grid-cols-3 gap-4 py-3">
-            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
-            <div class="h-4 bg-admin-surface-raised rounded w-1/4 col-span-2"></div>
+            <UiSkeleton class="h-4 w-1/4" />
+            <UiSkeleton class="h-4 w-1/4 col-span-2" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
+    <UiAlert v-else-if="error" variant="error">
       <p class="font-medium">Failed to load account information</p>
       <p class="text-sm mt-1">{{ error }}</p>
-      <button
+      <UiButton
         @click="fetchAccount"
-        class="mt-4 bg-admin-state-danger-text text-white px-4 py-2 rounded-lg text-sm hover:opacity-90 transition-colors"
+        variant="danger"
+        size="sm"
+        class="mt-4"
       >
         Try Again
-      </button>
-    </div>
+      </UiButton>
+    </UiAlert>
 
     <!-- Account Info -->
     <div v-else-if="account" class="space-y-8">
@@ -104,9 +106,9 @@
           <div class="grid grid-cols-3 gap-4 py-3">
             <dt class="text-sm font-medium text-admin-text-secondary">Role</dt>
             <dd class="text-sm col-span-2">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-admin-brand-soft text-admin-brand-strong">
+              <UiBadge variant="default">
                 {{ account.role }}
-              </span>
+              </UiBadge>
             </dd>
           </div>
         </dl>

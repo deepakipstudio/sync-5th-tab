@@ -1,5 +1,5 @@
 <template>
-  <nav class="flex items-center space-x-2 text-sm text-admin-text-secondary mb-4">
+  <nav class="flex items-center space-x-2 text-sm text-admin-text-secondary mb-6" aria-label="Breadcrumb">
     <NuxtLink
       v-if="tenantId"
       :to="`/admin/${tenantId}`"
@@ -16,7 +16,7 @@
       >
         {{ item.label }}
       </NuxtLink>
-      <span v-else class="text-admin-text-primary">{{ item.label }}</span>
+      <span v-else class="text-admin-text-primary font-medium">{{ item.label }}</span>
     </template>
   </nav>
 </template>

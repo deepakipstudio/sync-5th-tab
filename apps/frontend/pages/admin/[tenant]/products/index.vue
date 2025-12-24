@@ -1,30 +1,32 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-semibold text-admin-text-primary">Products</h1>
-        <p class="text-sm text-admin-text-secondary mt-1">Manage your product catalog</p>
+        <h1 class="text-3xl font-semibold text-admin-text-primary">Products</h1>
+        <p class="text-sm text-admin-text-secondary mt-2">Manage your product catalog</p>
       </div>
       <div class="flex gap-2">
-        <button
+        <UiButton
           @click="openSyncModal"
-          class="inline-flex items-center gap-2 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-hover transition-colors"
+          variant="secondary"
+          class="inline-flex items-center gap-2"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           Sync Products
-        </button>
-        <button
+        </UiButton>
+        <UiButton
           @click="openAddModal"
-          class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
+          variant="default"
+          class="inline-flex items-center gap-2"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Add Product
-        </button>
+        </UiButton>
       </div>
     </div>
 
@@ -33,25 +35,25 @@
       <div
         v-for="i in 6"
         :key="i"
-        class="bg-admin-surface-base rounded-lg border border-admin-border overflow-hidden animate-pulse"
+        class="bg-admin-surface-base rounded-lg border border-admin-border overflow-hidden"
       >
         <!-- Image Skeleton -->
-        <div class="aspect-[16/9] bg-admin-surface-raised"></div>
+        <UiSkeleton class="aspect-[16/9] w-full" />
         <!-- Content Skeleton -->
         <div class="p-4 space-y-3">
-          <div class="h-5 bg-admin-surface-raised rounded w-3/4"></div>
-          <div class="h-3 bg-admin-surface-raised rounded w-1/4"></div>
-          <div class="h-4 bg-admin-surface-raised rounded w-full"></div>
-          <div class="h-4 bg-admin-surface-raised rounded w-2/3"></div>
-          <div class="h-3 bg-admin-surface-raised rounded w-1/3"></div>
+          <UiSkeleton class="h-5 w-3/4" />
+          <UiSkeleton class="h-3 w-1/4" />
+          <UiSkeleton class="h-4 w-full" />
+          <UiSkeleton class="h-4 w-2/3" />
+          <UiSkeleton class="h-3 w-1/3" />
         </div>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
+    <UiAlert v-else-if="error" variant="error">
       {{ error }}
-    </div>
+    </UiAlert>
 
     <!-- Empty State -->
     <div v-else-if="products.length === 0" class="bg-admin-surface-base rounded-lg border border-admin-border p-12 text-center">
@@ -62,15 +64,16 @@
       </div>
       <h3 class="text-lg font-medium text-admin-text-primary mb-1">No products yet</h3>
       <p class="text-admin-text-secondary mb-4">Get started by adding your first product from Marianatek.</p>
-      <button
+      <UiButton
         @click="openAddModal"
-        class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
+        variant="default"
+        class="inline-flex items-center gap-2"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Add Product
-      </button>
+      </UiButton>
     </div>
 
     <!-- Products Grid -->
@@ -83,60 +86,48 @@
       >
         <!-- Three-dot Menu -->
         <div class="absolute top-2 right-2 z-10">
-          <button
-            @click.stop="toggleProductMenu(product.id)"
-            class="p-1.5 bg-admin-surface-base/90 backdrop-blur-sm rounded-full hover:bg-admin-surface-base shadow-sm transition-colors"
+          <UiDropdownMenu
+            :open="openMenuId === product.id"
+            @update:open="(value) => { if (value) toggleProductMenu(product.id); else closeProductMenu() }"
           >
-            <svg class="w-5 h-5 text-admin-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
-          
-          <!-- Dropdown Menu -->
-          <div
-            v-if="openMenuId === product.id"
-            @click.stop
-            class="absolute right-0 mt-1 w-56 bg-admin-surface-base rounded-lg shadow-lg border border-admin-border py-1 z-20"
-          >
-            <button
-              @click.stop="editOnMT(product)"
-              class="w-full text-left px-4 py-2 text-sm text-admin-text-primary hover:bg-admin-surface-hover flex items-center gap-2"
-            >
+            <template #trigger>
+              <UiButton
+                variant="ghost"
+                size="icon"
+                class="p-1.5 bg-admin-surface-base/90 backdrop-blur-sm rounded-full hover:bg-admin-surface-base shadow-sm"
+              >
+                <svg class="w-5 h-5 text-admin-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+              </UiButton>
+            </template>
+            <UiDropdownMenuItem @click.stop="editOnMT(product)">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Edit on Mariana Tek
-            </button>
-            <button
-              @click.stop="viewOnStore(product)"
-              class="w-full text-left px-4 py-2 text-sm text-admin-text-primary hover:bg-admin-surface-hover flex items-center gap-2"
-            >
+            </UiDropdownMenuItem>
+            <UiDropdownMenuItem @click.stop="viewOnStore(product)">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               View on store
-            </button>
-            <button
-              @click.stop="toggleProductVisibility(product)"
-              class="w-full text-left px-4 py-2 text-sm text-admin-text-primary hover:bg-admin-surface-hover flex items-center gap-2"
-            >
+            </UiDropdownMenuItem>
+            <UiDropdownMenuItem @click.stop="toggleProductVisibility(product)">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
               </svg>
               {{ product.visible ? 'Disable' : 'Enable' }}
-            </button>
-            <div class="border-t border-admin-border my-1"></div>
-            <button
-              @click.stop="openDeleteModal(product)"
-              class="w-full text-left px-4 py-2 text-sm text-admin-state-danger-text hover:bg-admin-state-danger-soft flex items-center gap-2"
-            >
+            </UiDropdownMenuItem>
+            <UiDropdownMenuSeparator />
+            <UiDropdownMenuItem @click.stop="openDeleteModal(product)" class="text-admin-state-danger-text hover:bg-admin-state-danger-soft">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Delete from Sync
-            </button>
-          </div>
+            </UiDropdownMenuItem>
+          </UiDropdownMenu>
         </div>
 
         <!-- Image Preview -->
@@ -155,16 +146,9 @@
           </div>
           <!-- Status Badge -->
           <div class="absolute top-2 left-2">
-            <span
-              :class="[
-                'text-xs font-medium px-2 py-0.5 rounded-full',
-                product.visible
-                  ? 'bg-admin-state-success-soft text-admin-state-success-text'
-                  : 'bg-admin-surface-raised text-admin-text-muted'
-              ]"
-            >
+            <UiBadge :variant="product.visible ? 'success' : 'default'">
               {{ product.visible ? 'Visible' : 'Hidden' }}
-            </span>
+            </UiBadge>
           </div>
         </div>
 
@@ -185,33 +169,31 @@
     </div>
 
     <!-- MT Product Search Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showAddModal"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-        @click.self="closeAddModal"
-      >
-        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-admin-text-primary">Select Product from Marianatek</h2>
-            <button @click="closeAddModal" class="text-admin-text-muted hover:text-admin-text-secondary">
+    <UiDialog :open="showAddModal" @update:open="(value) => { if (!value) closeAddModal() }" class="max-w-4xl max-h-[90vh]">
+      <UiDialogTitle class="sr-only">Select Product from Marianatek</UiDialogTitle>
+      <div class="flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-admin-text-primary">Select Product from Marianatek</h2>
+          <UiDialogClose as-child>
+            <UiButton variant="ghost" size="icon" class="text-admin-text-muted hover:text-admin-text-secondary">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
-          </div>
+            </UiButton>
+          </UiDialogClose>
+        </div>
 
-          <div class="p-6 flex-1 overflow-y-auto">
-            <!-- Search -->
-            <div class="mb-4">
-              <input
-                v-model="searchQuery"
-                @input="() => searchMTProducts(1)"
-                type="text"
-                placeholder="Search products..."
-                class="w-full px-4 py-2 border border-admin-border rounded-lg focus:ring-2 focus:ring-admin-brand-strong focus:border-admin-border-focus"
-              />
-            </div>
+        <div class="p-6 flex-1 overflow-y-auto">
+          <!-- Search -->
+          <div class="mb-4">
+            <UiInput
+              v-model="searchQuery"
+              @input="() => searchMTProducts(1)"
+              type="text"
+              placeholder="Search products..."
+              class="w-full"
+            />
+          </div>
 
             <!-- Count and Pagination Info -->
             <div v-if="mtProductsTotal > 0" class="mb-4 flex items-center justify-between text-sm text-admin-text-secondary">
@@ -219,23 +201,25 @@
                 Showing {{ mtProducts.length }} out of {{ mtProductsTotal }} product{{ mtProductsTotal !== 1 ? 's' : '' }}
               </span>
               <div v-if="mtProductsTotal > mtProductsPageSize" class="flex items-center gap-2">
-                <button
+                <UiButton
                   @click="searchMTProducts(mtProductsPage - 1)"
                   :disabled="mtProductsPage <= 1 || searching"
-                  class="px-3 py-1 border border-admin-border rounded hover:bg-admin-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  size="sm"
                 >
                   Previous
-                </button>
+                </UiButton>
                 <span class="text-admin-text-primary">
                   Page {{ mtProductsPage }} of {{ Math.ceil(mtProductsTotal / mtProductsPageSize) }}
                 </span>
-                <button
+                <UiButton
                   @click="searchMTProducts(mtProductsPage + 1)"
                   :disabled="mtProductsPage >= Math.ceil(mtProductsTotal / mtProductsPageSize) || searching"
-                  class="px-3 py-1 border border-admin-border rounded hover:bg-admin-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  size="sm"
                 >
                   Next
-                </button>
+                </UiButton>
               </div>
             </div>
 
@@ -266,9 +250,9 @@
                     </div>
                   </div>
                   <div v-if="isProductAdded(product.id)" class="ml-4 flex-shrink-0">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-admin-state-success-soft text-admin-state-success-text">
+                    <UiBadge variant="success">
                       Added
-                    </span>
+                    </UiBadge>
                   </div>
                 </div>
               </div>
@@ -282,42 +266,37 @@
             </div>
           </div>
         </div>
-      </div>
-    </Teleport>
+    </UiDialog>
 
     <!-- Sync Products Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showSyncModal"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-        @click.self="closeSyncModal"
-      >
-        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-admin-text-primary">Sync Products</h2>
-            <button @click="closeSyncModal" class="text-admin-text-muted hover:text-admin-text-secondary">
+    <UiDialog :open="showSyncModal" @update:open="(value) => { if (!value) closeSyncModal() }" class="max-w-2xl max-h-[90vh]">
+      <UiDialogTitle class="sr-only">Sync Products</UiDialogTitle>
+      <div class="flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-admin-text-primary">Sync Products</h2>
+          <UiDialogClose as-child>
+            <UiButton variant="ghost" size="icon" class="text-admin-text-muted hover:text-admin-text-secondary">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
-          </div>
+            </UiButton>
+          </UiDialogClose>
+        </div>
 
-          <div class="p-6 flex-1 overflow-y-auto">
-            <p class="text-sm text-admin-text-secondary mb-4">
-              Select products to sync from Marianatek. This will update variants, add new ones, and mark deleted variants.
-            </p>
+        <div class="p-6 flex-1 overflow-y-auto">
+          <p class="text-sm text-admin-text-secondary mb-4">
+            Select products to sync from Marianatek. This will update variants, add new ones, and mark deleted variants.
+          </p>
 
-            <!-- Product Selection -->
-            <div class="space-y-2 mb-4">
-              <div class="flex items-center gap-2 mb-2">
-                <input
-                  type="checkbox"
-                  :checked="allSelected"
-                  @change="toggleAllProducts"
-                  class="rounded border-admin-border text-admin-brand-strong focus:ring-admin-brand-strong"
-                />
-                <label class="text-sm font-medium text-admin-text-primary">Select All</label>
-              </div>
+          <!-- Product Selection -->
+          <div class="space-y-2 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <UiCheckbox
+                :checked="allSelected"
+                @update:checked="(value) => { if (value && !allSelected) toggleAllProducts(); else if (!value && allSelected) toggleAllProducts() }"
+              />
+              <UiLabel class="text-sm font-medium">Select All</UiLabel>
+            </div>
               <div
                 v-for="product in products"
                 :key="product.id"
@@ -345,28 +324,28 @@
                 
                 <!-- Checkbox + Product Info -->
                 <div class="flex items-center gap-2 flex-1 min-w-0">
-                  <input
-                    type="checkbox"
+                  <UiCheckbox
                     :checked="selectedProducts.includes(product.id)"
-                    @change="toggleProduct(product.id)"
-                    class="rounded border-admin-border text-admin-brand-strong focus:ring-admin-brand-strong flex-shrink-0"
+                    @update:checked="(value) => { if (value && !selectedProducts.includes(product.id)) toggleProduct(product.id); else if (!value && selectedProducts.includes(product.id)) toggleProduct(product.id) }"
+                    class="flex-shrink-0"
                   />
-                  <label class="flex-1 text-sm text-admin-text-primary cursor-pointer">
+                  <UiLabel class="flex-1 text-sm cursor-pointer">
                     {{ product.mtProductName || 'Product' }} ({{ product.mtProductId }}) ({{ product.variants?.length || 0 }} variants)
-                  </label>
+                  </UiLabel>
                 </div>
               </div>
             </div>
 
             <!-- Sync Button -->
-            <button
+            <UiButton
               @click="performSync"
               :disabled="syncing || selectedProducts.length === 0"
-              class="w-full bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="default"
+              class="w-full"
             >
               <span v-if="syncing">Syncing...</span>
               <span v-else>Sync Now ({{ selectedProducts.length }} product{{ selectedProducts.length !== 1 ? 's' : '' }})</span>
-            </button>
+            </UiButton>
 
             <!-- Sync Results -->
             <div v-if="syncResult" class="mt-4 p-4 bg-admin-surface-raised rounded-lg">
@@ -383,51 +362,44 @@
             </div>
           </div>
         </div>
-      </div>
-    </Teleport>
+    </UiDialog>
 
     <!-- Delete Confirmation Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showDeleteModal"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-        @click.self="closeDeleteModal"
-      >
-        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-md">
-          <div class="p-6">
-            <div class="mx-auto w-12 h-12 bg-admin-state-danger-soft rounded-full flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-admin-state-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-admin-text-primary text-center mb-2">Delete from Sync</h3>
-            <p class="text-admin-text-secondary text-center mb-4">
-              Are you sure you want to delete <strong>{{ productToDelete?.mtProductName || `Product #${productToDelete?.mtProductId}` }}</strong> from Sync?
-            </p>
-            <div class="bg-admin-state-warning-soft border border-admin-state-warning-border rounded-lg p-3 mb-6">
-              <p class="text-sm text-admin-state-warning-text">
-                <strong>Note:</strong> Deleting on Sync won't delete this product from Mariana Tek. To delete this product completely, delete it from your Mariana Tek account.
-              </p>
-            </div>
-            <div class="flex gap-3">
-              <button
-                @click="closeDeleteModal"
-                class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-hover transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                @click="confirmDelete"
-                :disabled="deleting"
-                class="flex-1 bg-admin-state-danger-text text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {{ deleting ? 'Deleting...' : 'Delete from Sync' }}
-              </button>
-            </div>
-          </div>
+    <UiDialog :open="showDeleteModal" @update:open="(value) => { if (!value) closeDeleteModal() }" class="max-w-md">
+      <div class="p-6">
+        <div class="mx-auto w-12 h-12 bg-admin-state-danger-soft rounded-full flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-admin-state-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </div>
+        <UiDialogTitle class="text-lg font-semibold text-admin-text-primary text-center mb-2">Delete from Sync</UiDialogTitle>
+        <UiDialogDescription class="text-admin-text-secondary text-center mb-4">
+          Are you sure you want to delete <strong>{{ productToDelete?.mtProductName || `Product #${productToDelete?.mtProductId}` }}</strong> from Sync?
+        </UiDialogDescription>
+        <UiAlert variant="warning" class="mb-6">
+          <p class="text-sm">
+            <strong>Note:</strong> Deleting on Sync won't delete this product from Mariana Tek. To delete this product completely, delete it from your Mariana Tek account.
+          </p>
+        </UiAlert>
+        <div class="flex gap-3">
+          <UiButton
+            @click="closeDeleteModal"
+            variant="secondary"
+            class="flex-1"
+          >
+            Cancel
+          </UiButton>
+          <UiButton
+            @click="confirmDelete"
+            :disabled="deleting"
+            variant="danger"
+            class="flex-1"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete from Sync' }}
+          </UiButton>
         </div>
       </div>
-    </Teleport>
+    </UiDialog>
   </div>
 </template>
 

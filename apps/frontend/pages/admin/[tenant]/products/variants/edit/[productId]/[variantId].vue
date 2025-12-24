@@ -1,18 +1,20 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <!-- Header -->
     <div class="flex items-center gap-4">
-      <button
+      <UiButton
         @click="navigateTo(mtProductId ? `/admin/${route.params.tenant}/products/edit/${mtProductId}` : `/admin/${route.params.tenant}/products`)"
+        variant="ghost"
+        size="icon"
         class="text-admin-text-secondary hover:text-admin-text-primary"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
-      </button>
+      </UiButton>
       <div>
-        <h1 class="text-2xl font-semibold text-admin-text-primary">{{ variantTitle }}</h1>
-        <p class="text-sm text-admin-text-secondary mt-1">SKU: {{ variant?.sku || 'N/A' }}</p>
+        <h1 class="text-3xl font-semibold text-admin-text-primary">{{ variantTitle }}</h1>
+        <p class="text-sm text-admin-text-secondary mt-2">SKU: {{ variant?.sku || 'N/A' }}</p>
       </div>
     </div>
 
@@ -22,9 +24,9 @@
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
+    <UiAlert v-else-if="error" variant="error">
       {{ error }}
-    </div>
+    </UiAlert>
 
     <!-- Form -->
     <form v-else @submit.prevent="saveVariant" class="space-y-6">
@@ -86,23 +88,26 @@
                 class="w-full h-full object-cover"
               />
             </div>
-            <button
+            <UiButton
               type="button"
               @click="markImageForDeletion(img.id)"
-              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              variant="danger"
+              size="icon"
+              class="absolute top-1 right-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
-            <button
+            </UiButton>
+            <UiButton
               type="button"
               @click="setFeaturedExistingImage(img.id)"
-              class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
+              :variant="img.isFeatured ? 'default' : 'secondary'"
+              size="sm"
+              class="absolute bottom-1 left-1 text-xs"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
-            </button>
+            </UiButton>
           </div>
         </div>
 
@@ -120,23 +125,26 @@
                 class="w-full h-full object-cover"
               />
             </div>
-            <button
+            <UiButton
               type="button"
               @click="removeNewImage(index)"
-              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              variant="danger"
+              size="icon"
+              class="absolute top-1 right-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
-            <button
+            </UiButton>
+            <UiButton
               type="button"
               @click="setFeaturedNewImage(index)"
-              class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
+              :variant="img.isFeatured ? 'default' : 'secondary'"
+              size="sm"
+              class="absolute bottom-1 left-1 text-xs"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
-            </button>
+            </UiButton>
           </div>
         </div>
       </div>
@@ -144,11 +152,11 @@
       <!-- Variant Description -->
       <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
         <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Variant Description</h2>
-        <textarea
+        <UiTextarea
           v-model="form.description"
           rows="4"
           placeholder="Enter variant description..."
-          class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
+          class="w-full"
         />
       </div>
 
@@ -210,26 +218,28 @@
       </div>
 
       <!-- Form Error -->
-      <div v-if="formError" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
+      <UiAlert v-if="formError" variant="error">
         {{ formError }}
-      </div>
+      </UiAlert>
 
       <!-- Actions -->
       <div class="flex gap-3">
-        <button
+        <UiButton
           type="button"
           @click="navigateTo(mtProductId ? `/admin/${route.params.tenant}/products/edit/${mtProductId}` : `/admin/${route.params.tenant}/products`)"
-          class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
+          variant="secondary"
+          class="flex-1"
         >
           Cancel
-        </button>
-        <button
+        </UiButton>
+        <UiButton
           type="submit"
           :disabled="saving"
-          class="flex-1 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="default"
+          class="flex-1"
         >
           {{ saving ? 'Saving...' : 'Save Changes' }}
-        </button>
+        </UiButton>
       </div>
     </form>
   </div>

@@ -1,61 +1,63 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <!-- Header -->
     <div class="flex items-center gap-4">
-      <button
+      <UiButton
         @click="navigateTo(`/admin/${route.params.tenant}/products`)"
+        variant="ghost"
+        size="icon"
         class="text-admin-text-secondary hover:text-admin-text-primary"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
-      </button>
+      </UiButton>
       <div>
-        <h1 class="text-2xl font-semibold text-admin-text-primary">
+        <h1 class="text-3xl font-semibold text-admin-text-primary">
           <span v-if="mtProductName">Editing {{ mtProductName }}</span>
           <span v-else-if="product?.mtProductId">Editing Product #{{ product.mtProductId }}</span>
           <span v-else>Edit Product</span>
         </h1>
-        <p class="text-sm text-admin-text-secondary mt-1">ID: {{ product?.mtProductId || 'N/A' }}</p>
+        <p class="text-sm text-admin-text-secondary mt-2">ID: {{ product?.mtProductId || 'N/A' }}</p>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="space-y-6 animate-pulse">
+    <div v-if="loading" class="space-y-6">
       <!-- Product Images Skeleton -->
       <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
-        <div class="h-6 bg-admin-surface-raised rounded w-40 mb-4"></div>
-        <div class="h-32 bg-admin-surface-raised rounded mb-4"></div>
+        <UiSkeleton class="h-6 w-40 mb-4" />
+        <UiSkeleton class="h-32 w-full mb-4" />
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div
+          <UiSkeleton
             v-for="i in 4"
             :key="i"
-            class="aspect-square bg-admin-surface-raised rounded-lg"
-          ></div>
+            class="aspect-square rounded-lg"
+          />
         </div>
       </div>
       
       <!-- Product Name Skeleton -->
       <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
-        <div class="h-6 bg-admin-surface-raised rounded w-40 mb-4"></div>
+        <UiSkeleton class="h-6 w-40 mb-4" />
         <div class="space-y-4">
           <div>
-            <div class="h-4 bg-admin-surface-raised rounded w-32 mb-2"></div>
-            <div class="h-10 bg-admin-surface-raised rounded"></div>
-            <div class="h-3 bg-admin-surface-raised rounded w-24 mt-1"></div>
+            <UiSkeleton class="h-4 w-32 mb-2" />
+            <UiSkeleton class="h-10 w-full" />
+            <UiSkeleton class="h-3 w-24 mt-1" />
           </div>
         </div>
       </div>
       
       <!-- Product Description Skeleton -->
       <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
-        <div class="h-6 bg-admin-surface-raised rounded w-40 mb-4"></div>
-        <div class="h-24 bg-admin-surface-raised rounded"></div>
+        <UiSkeleton class="h-6 w-40 mb-4" />
+        <UiSkeleton class="h-24 w-full" />
       </div>
       
       <!-- Variants Skeleton -->
       <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
-        <div class="h-6 bg-admin-surface-raised rounded w-32 mb-4"></div>
+        <UiSkeleton class="h-6 w-32 mb-4" />
         <div class="space-y-4">
           <div
             v-for="i in 3"
@@ -63,14 +65,14 @@
             class="bg-admin-surface-base border border-admin-border rounded-lg overflow-hidden"
           >
             <div class="p-4 border-b border-admin-border-subtle bg-admin-surface-raised">
-              <div class="h-5 bg-admin-surface-raised rounded w-48 mb-1"></div>
-              <div class="h-3 bg-admin-surface-raised rounded w-32"></div>
+              <UiSkeleton class="h-5 w-48 mb-1" />
+              <UiSkeleton class="h-3 w-32" />
             </div>
             <div class="p-4">
-              <div class="h-4 bg-admin-surface-raised rounded w-40 mb-3"></div>
+              <UiSkeleton class="h-4 w-40 mb-3" />
               <div class="space-y-2">
-                <div class="h-4 bg-admin-surface-raised rounded w-full"></div>
-                <div class="h-4 bg-admin-surface-raised rounded w-3/4"></div>
+                <UiSkeleton class="h-4 w-full" />
+                <UiSkeleton class="h-4 w-3/4" />
               </div>
             </div>
           </div>
@@ -79,9 +81,9 @@
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
+    <UiAlert v-else-if="error" variant="error">
       {{ error }}
-    </div>
+    </UiAlert>
 
     <!-- Form -->
     <form v-else @submit.prevent="saveProduct" class="space-y-6">
@@ -143,23 +145,26 @@
                 class="w-full h-full object-cover"
               />
             </div>
-            <button
+            <UiButton
               type="button"
               @click="markImageForDeletion(img.id)"
-              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              variant="danger"
+              size="icon"
+              class="absolute top-1 right-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
-            <button
+            </UiButton>
+            <UiButton
               type="button"
               @click="setFeaturedExistingImage(img.id)"
-              class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
+              :variant="img.isFeatured ? 'default' : 'secondary'"
+              size="sm"
+              class="absolute bottom-1 left-1 text-xs"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
-            </button>
+            </UiButton>
           </div>
         </div>
 
@@ -177,23 +182,26 @@
                 class="w-full h-full object-cover"
               />
             </div>
-            <button
+            <UiButton
               type="button"
               @click="removeNewImage(index)"
-              class="absolute top-1 right-1 bg-admin-state-danger-text text-admin-text-inverse rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              variant="danger"
+              size="icon"
+              class="absolute top-1 right-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
-            <button
+            </UiButton>
+            <UiButton
               type="button"
               @click="setFeaturedNewImage(index)"
-              class="absolute bottom-1 left-1 text-xs px-2 py-1 rounded"
-              :class="img.isFeatured ? 'bg-admin-brand-strong text-admin-text-inverse' : 'bg-admin-surface-base text-admin-text-primary'"
+              :variant="img.isFeatured ? 'default' : 'secondary'"
+              size="sm"
+              class="absolute bottom-1 left-1 text-xs"
             >
               {{ img.isFeatured ? 'Featured' : 'Set Featured' }}
-            </button>
+            </UiButton>
           </div>
         </div>
       </div>
@@ -203,14 +211,14 @@
         <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Product Information</h2>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-admin-text-primary mb-1">
+            <UiLabel class="block mb-1">
               Product Name
-            </label>
-            <input
+            </UiLabel>
+            <UiInput
               :value="mtProductName || ''"
               type="text"
               disabled
-              class="w-full border border-admin-border rounded-lg px-3 py-2 bg-admin-surface-raised text-admin-text-secondary cursor-not-allowed"
+              class="w-full bg-admin-surface-raised text-admin-text-secondary cursor-not-allowed"
             />
             <p class="text-xs text-admin-text-secondary mt-1">ID: {{ product?.mtProductId || 'N/A' }}</p>
           </div>
@@ -220,11 +228,11 @@
       <!-- Product Description -->
       <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
         <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Product Description</h2>
-        <textarea
+        <UiTextarea
           v-model="form.description"
           rows="4"
           placeholder="Enter product description..."
-          class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
+          class="w-full"
         />
       </div>
 
@@ -249,13 +257,14 @@
                   <h3 class="font-semibold text-admin-text-primary">{{ variant.sku || 'Untitled Variant' }}</h3>
                   <p class="text-xs text-admin-text-secondary mt-0.5">MT Variant ID: {{ variant.mtVariantId }}</p>
                 </div>
-                <button
+                <UiButton
                   type="button"
                   @click="navigateTo(`/admin/${route.params.tenant}/products/variants/edit/${product?.id}/${variant.id}`)"
-                  class="text-sm font-medium text-admin-text-primary hover:text-admin-text-primary px-3 py-1.5 bg-admin-surface-base border border-admin-border rounded-lg hover:bg-admin-surface-raised transition-colors"
+                  variant="outline"
+                  size="sm"
                 >
                   Edit →
-                </button>
+                </UiButton>
               </div>
             </div>
 
@@ -333,26 +342,28 @@
       </div>
 
       <!-- Form Error -->
-      <div v-if="formError" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
+      <UiAlert v-if="formError" variant="error">
         {{ formError }}
-      </div>
+      </UiAlert>
 
       <!-- Actions -->
       <div class="flex gap-3">
-        <button
+        <UiButton
           type="button"
           @click="navigateTo(`/admin/${route.params.tenant}/products`)"
-          class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
+          variant="secondary"
+          class="flex-1"
         >
           Cancel
-        </button>
-        <button
+        </UiButton>
+        <UiButton
           type="submit"
           :disabled="saving"
-          class="flex-1 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="default"
+          class="flex-1"
         >
           {{ saving ? 'Saving...' : 'Save Changes' }}
-        </button>
+        </UiButton>
       </div>
     </form>
   </div>

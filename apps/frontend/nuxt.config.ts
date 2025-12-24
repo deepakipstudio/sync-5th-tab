@@ -9,7 +9,7 @@ export default defineNuxtConfig({
       adminCacheEnabled: process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== 'false' && process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== '0' && process.env.NUXT_PUBLIC_ADMIN_CACHE_ENABLED !== ''
     }
   },
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@vueuse/nuxt'],
   app: {
     head: {
       link: [
