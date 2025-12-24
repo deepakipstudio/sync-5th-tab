@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { cva, type VariantProps } from 'class-variance-authority'
+import { cva } from 'class-variance-authority'
 import { cn } from '~/lib/utils'
 
 const buttonVariants = cva(
@@ -37,7 +37,9 @@ const buttonVariants = cva(
   }
 )
 
-export interface ButtonProps extends VariantProps<typeof buttonVariants> {
+interface ButtonProps {
+  variant?: 'default' | 'secondary' | 'danger' | 'ghost' | 'outline'
+  size?: 'default' | 'sm' | 'lg' | 'icon'
   disabled?: boolean
 }
 

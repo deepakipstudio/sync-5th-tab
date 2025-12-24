@@ -2,52 +2,52 @@
   <div class="space-y-8">
     <!-- Header -->
     <div>
-      <h1 class="text-2xl font-semibold text-admin-text-primary">Store Settings</h1>
-      <p class="text-sm text-admin-text-secondary mt-1">Manage your store branding and promotional banners</p>
+      <h1 class="text-3xl font-semibold text-admin-text-primary">Store Settings</h1>
+      <p class="text-sm text-admin-text-secondary mt-2">Manage your store branding and promotional banners</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="space-y-8">
       <!-- Brand Settings Skeleton -->
-      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6 animate-pulse">
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
         <div class="space-y-4">
-          <div class="h-6 bg-admin-surface-raised rounded w-1/3"></div>
-          <div class="h-4 bg-admin-surface-raised rounded w-1/2"></div>
+          <UiSkeleton class="h-6 w-1/3" />
+          <UiSkeleton class="h-4 w-1/2" />
           <div class="space-y-3">
-            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
+            <UiSkeleton class="h-4 w-1/4" />
             <div class="flex items-center gap-3">
-              <div class="w-16 h-10 bg-admin-surface-raised rounded"></div>
-              <div class="flex-1 h-10 bg-admin-surface-raised rounded"></div>
+              <UiSkeleton class="w-16 h-10" />
+              <UiSkeleton class="flex-1 h-10" />
             </div>
           </div>
           <div class="space-y-3">
-            <div class="h-4 bg-admin-surface-raised rounded w-1/4"></div>
+            <UiSkeleton class="h-4 w-1/4" />
             <div class="flex items-center gap-3">
-              <div class="w-16 h-10 bg-admin-surface-raised rounded"></div>
-              <div class="flex-1 h-10 bg-admin-surface-raised rounded"></div>
+              <UiSkeleton class="w-16 h-10" />
+              <UiSkeleton class="flex-1 h-10" />
             </div>
           </div>
           <div class="mt-4 p-4 bg-admin-surface-raised rounded-lg">
-            <div class="h-4 bg-admin-surface-sunken rounded w-1/6 mb-2"></div>
+            <UiSkeleton class="h-4 w-1/6 mb-2" />
             <div class="flex gap-2">
-              <div class="flex-1 h-16 bg-admin-surface-sunken rounded"></div>
-              <div class="flex-1 h-16 bg-admin-surface-sunken rounded"></div>
+              <UiSkeleton class="flex-1 h-16" />
+              <UiSkeleton class="flex-1 h-16" />
             </div>
           </div>
           <div class="flex justify-end">
-            <div class="h-10 bg-admin-surface-raised rounded w-40"></div>
+            <UiSkeleton class="h-10 w-40" />
           </div>
         </div>
       </div>
 
       <!-- Banners Section Skeleton -->
-      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6 animate-pulse">
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
         <div class="flex items-center justify-between mb-4">
           <div class="space-y-2">
-            <div class="h-6 bg-admin-surface-raised rounded w-1/4"></div>
-            <div class="h-4 bg-admin-surface-raised rounded w-1/2"></div>
+            <UiSkeleton class="h-6 w-1/4" />
+            <UiSkeleton class="h-4 w-1/2" />
           </div>
-          <div class="h-10 bg-admin-surface-raised rounded w-32"></div>
+          <UiSkeleton class="h-10 w-32" />
         </div>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div
@@ -55,11 +55,11 @@
             :key="i"
             class="bg-admin-surface-raised rounded-lg border border-admin-border overflow-hidden"
           >
-            <div class="aspect-[16/9] bg-admin-surface-sunken"></div>
+            <UiSkeleton class="aspect-[16/9] w-full" />
             <div class="p-4 space-y-3">
-              <div class="h-4 bg-admin-surface-sunken rounded w-3/4"></div>
-              <div class="h-3 bg-admin-surface-sunken rounded w-1/2"></div>
-              <div class="h-3 bg-admin-surface-sunken rounded w-1/3"></div>
+              <UiSkeleton class="h-4 w-3/4" />
+              <UiSkeleton class="h-3 w-1/2" />
+              <UiSkeleton class="h-3 w-1/3" />
             </div>
           </div>
         </div>
@@ -80,42 +80,42 @@
       <div class="space-y-4">
         <!-- Primary Color -->
         <div>
-          <label class="block text-sm font-medium text-admin-text-primary mb-2">
+          <UiLabel class="block mb-2">
             Primary Brand Color
-          </label>
+          </UiLabel>
           <div class="flex items-center gap-3">
             <input
               v-model="brandForm.primaryBrandColor"
               type="color"
               class="w-16 h-10 rounded border border-admin-border cursor-pointer"
             />
-            <input
+            <UiInput
               v-model="brandForm.primaryBrandColor"
               type="text"
               placeholder="#8e213e"
               pattern="^#[0-9A-Fa-f]{6}$"
-              class="flex-1 border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none font-mono text-sm"
+              class="flex-1 font-mono text-sm"
             />
           </div>
         </div>
 
         <!-- Secondary Color -->
         <div>
-          <label class="block text-sm font-medium text-admin-text-primary mb-2">
+          <UiLabel class="block mb-2">
             Secondary Brand Color
-          </label>
+          </UiLabel>
           <div class="flex items-center gap-3">
             <input
               v-model="brandForm.secondaryBrandColor"
               type="color"
               class="w-16 h-10 rounded border border-admin-border cursor-pointer"
             />
-            <input
+            <UiInput
               v-model="brandForm.secondaryBrandColor"
               type="text"
               placeholder="#a83d5a"
               pattern="^#[0-9A-Fa-f]{6}$"
-              class="flex-1 border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none font-mono text-sm"
+              class="flex-1 font-mono text-sm"
             />
           </div>
         </div>
@@ -140,19 +140,19 @@
         </div>
 
         <!-- Brand Settings Error -->
-        <div v-if="brandError" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-3 text-admin-state-danger-text text-sm">
+        <UiAlert v-if="brandError" variant="error" class="text-sm">
           {{ brandError }}
-        </div>
+        </UiAlert>
 
         <!-- Save Brand Settings Button -->
         <div class="flex justify-end pt-2">
-          <button
+          <UiButton
             @click="saveBrandSettings"
             :disabled="savingBrand"
-            class="bg-admin-brand-strong text-admin-text-inverse px-6 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="default"
           >
             {{ savingBrand ? 'Saving...' : 'Save Brand Settings' }}
-          </button>
+          </UiButton>
         </div>
       </div>
     </div>
@@ -164,21 +164,22 @@
           <h2 class="text-lg font-semibold text-admin-text-primary">Banners</h2>
           <p class="text-sm text-admin-text-secondary mt-1">Manage promotional banners for your shop</p>
         </div>
-        <button
+        <UiButton
           @click="openCreateModal"
-          class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
+          variant="default"
+          class="inline-flex items-center gap-2"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Add Banner
-        </button>
+        </UiButton>
       </div>
 
       <!-- Error State -->
-      <div v-if="error" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-4 text-admin-state-danger-text">
+      <UiAlert v-if="error" variant="error">
         {{ error }}
-      </div>
+      </UiAlert>
 
       <!-- Empty State -->
       <div v-else-if="banners.length === 0" class="bg-admin-surface-raised rounded-lg border border-admin-border p-12 text-center">
@@ -189,15 +190,16 @@
         </div>
         <h3 class="text-lg font-medium text-admin-text-primary mb-1">No banners yet</h3>
         <p class="text-admin-text-secondary mb-4">Get started by creating your first promotional banner.</p>
-        <button
+        <UiButton
           @click="openCreateModal"
-          class="inline-flex items-center gap-2 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
+          variant="default"
+          class="inline-flex items-center gap-2"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Create Banner
-        </button>
+        </UiButton>
       </div>
 
       <!-- Banners Grid -->
@@ -223,22 +225,15 @@
             </div>
             <!-- Status Badges -->
             <div class="absolute top-2 left-2 flex gap-1.5">
-              <span
-                :class="[
-                  'text-xs font-medium px-2 py-0.5 rounded-full',
-                  banner.visible
-                    ? 'bg-admin-state-success-soft text-admin-state-success-text'
-                    : 'bg-admin-surface-raised text-admin-text-secondary'
-                ]"
-              >
+              <UiBadge :variant="banner.visible ? 'success' : 'default'">
                 {{ banner.visible ? 'Visible' : 'Hidden' }}
-              </span>
-              <span
+              </UiBadge>
+              <UiBadge
                 v-if="isExpired(banner.expiresAt)"
-                class="text-xs font-medium px-2 py-0.5 rounded-full bg-admin-state-warning-soft text-admin-state-warning-text"
+                variant="warning"
               >
                 Expired
-              </span>
+              </UiBadge>
             </div>
           </div>
 
@@ -261,18 +256,21 @@
 
             <!-- Actions -->
             <div class="flex gap-2 pt-3 border-t border-admin-border-subtle">
-              <button
+              <UiButton
                 @click="openEditModal(banner)"
-                class="flex-1 text-sm text-admin-text-primary bg-admin-surface-base hover:bg-admin-surface-hover px-3 py-1.5 rounded transition-colors"
+                variant="secondary"
+                size="sm"
+                class="flex-1"
               >
                 Edit
-              </button>
-              <button
+              </UiButton>
+              <UiButton
                 @click="confirmDelete(banner)"
-                class="text-sm text-admin-state-danger-text bg-admin-state-danger-soft hover:bg-admin-state-danger-soft px-3 py-1.5 rounded transition-colors"
+                variant="danger"
+                size="sm"
               >
                 Delete
-              </button>
+              </UiButton>
             </div>
           </div>
         </div>
@@ -281,25 +279,22 @@
     </template>
 
     <!-- Create/Edit Banner Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showModal"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-        @click.self="closeModal"
-      >
-        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-admin-border">
-            <h2 class="text-lg font-semibold text-admin-text-primary">
-              {{ editingBanner ? 'Edit Banner' : 'Create Banner' }}
-            </h2>
-          </div>
+    <UiDialog :open="showModal" @update:open="(value) => { if (!value) closeModal() }" class="max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-admin-border pb-4 mb-4">
+        <UiDialogTitle>
+          {{ editingBanner ? 'Edit Banner' : 'Create Banner' }}
+        </UiDialogTitle>
+        <UiDialogDescription class="sr-only">
+          {{ editingBanner ? 'Edit banner details' : 'Create a new promotional banner' }}
+        </UiDialogDescription>
+      </div>
 
-          <form @submit.prevent="saveBanner" class="p-6 space-y-4">
+      <form @submit.prevent="saveBanner" class="space-y-4">
             <!-- Image Upload -->
             <div>
-              <label class="block text-sm font-medium text-admin-text-primary mb-1">
+              <UiLabel class="block mb-1">
                 Banner Image <span v-if="!editingBanner" class="text-admin-state-danger-text">*</span>
-              </label>
+              </UiLabel>
               
               <!-- Drop Zone -->
               <div
@@ -335,13 +330,15 @@
                       ({{ formatFileSize(selectedFile.size) }})
                     </span>
                   </p>
-                  <button
+                  <UiButton
                     type="button"
                     @click.stop="clearImage"
+                    variant="ghost"
+                    size="sm"
                     class="text-sm text-admin-state-danger-text hover:text-admin-state-danger-text"
                   >
                     Remove
-                  </button>
+                  </UiButton>
                 </div>
                 <div v-else class="space-y-2">
                   <svg class="mx-auto w-12 h-12 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -363,173 +360,127 @@
 
             <!-- Collection ID -->
             <div>
-              <label class="block text-sm font-medium text-admin-text-primary mb-1">
+              <UiLabel class="block mb-1">
                 Collection ID
-              </label>
-              <input
+              </UiLabel>
+              <UiInput
                 v-model.number="form.collectionId"
                 type="number"
                 placeholder="Optional - Link to a product collection"
-                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
             <!-- Product Class -->
             <div>
-              <label class="block text-sm font-medium text-admin-text-primary mb-1">
+              <UiLabel class="block mb-1">
                 Product Class
-              </label>
-              <input
+              </UiLabel>
+              <UiInput
                 v-model="form.productClass"
                 type="text"
                 placeholder="Optional - e.g. membership, retail"
-                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
             <!-- Expires At -->
             <div>
-              <label class="block text-sm font-medium text-admin-text-primary mb-1">
+              <UiLabel class="block mb-1">
                 Expiration Date
-              </label>
-              <input
+              </UiLabel>
+              <UiInput
                 v-model="form.expiresAt"
                 type="datetime-local"
-                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
             <!-- Sort Order -->
             <div>
-              <label class="block text-sm font-medium text-admin-text-primary mb-1">
+              <UiLabel class="block mb-1">
                 Sort Order
-              </label>
-              <input
+              </UiLabel>
+              <UiInput
                 v-model.number="form.sortOrder"
                 type="number"
                 placeholder="Lower numbers appear first"
-                class="w-full border border-admin-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent outline-none"
               />
             </div>
 
             <!-- Visible Toggle -->
             <div class="flex items-center gap-3">
-              <button
-                type="button"
-                @click="form.visible = !form.visible"
-                :class="[
-                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-admin-brand-strong focus:ring-offset-2',
-                  form.visible ? 'bg-admin-brand-strong' : 'bg-admin-surface-raised'
-                ]"
-              >
-                <span
-                  :class="[
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-admin-surface-base shadow ring-0 transition duration-200 ease-in-out',
-                    form.visible ? 'translate-x-5' : 'translate-x-0'
-                  ]"
-                />
-              </button>
-              <label class="text-sm font-medium text-admin-text-primary">
+              <UiSwitch
+                :checked="form.visible"
+                @update:checked="(value) => form.visible = value"
+              />
+              <UiLabel class="text-sm font-medium">
                 {{ form.visible ? 'Visible to customers' : 'Hidden from customers' }}
-              </label>
+              </UiLabel>
             </div>
 
             <!-- Form Error -->
-            <div v-if="formError" class="bg-admin-state-danger-soft border border-admin-state-danger-border rounded-lg p-3 text-admin-state-danger-text text-sm">
+            <UiAlert v-if="formError" variant="error" class="text-sm">
               {{ formError }}
-            </div>
+            </UiAlert>
 
             <!-- Actions -->
             <div class="flex gap-3 pt-4">
-              <button
+              <UiButton
                 type="button"
                 @click="closeModal"
-                class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
+                variant="secondary"
+                class="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </UiButton>
+              <UiButton
                 type="submit"
                 :disabled="saving"
-                class="flex-1 bg-admin-brand-strong text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="default"
+                class="flex-1"
               >
                 {{ saving ? 'Saving...' : (editingBanner ? 'Update' : 'Create') }}
-              </button>
+              </UiButton>
             </div>
           </form>
-        </div>
-      </div>
-    </Teleport>
+    </UiDialog>
 
     <!-- Delete Confirmation Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showDeleteModal"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-        @click.self="showDeleteModal = false"
-      >
-        <div class="bg-admin-surface-base rounded-xl shadow-xl w-full max-w-md">
-          <div class="p-6">
-            <div class="mx-auto w-12 h-12 bg-admin-state-danger-soft rounded-full flex items-center justify-center mb-4">
-              <svg class="w-6 h-6 text-admin-state-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-admin-text-primary text-center mb-2">Delete Banner</h3>
-            <p class="text-admin-text-secondary text-center mb-6">
-              Are you sure you want to delete this banner? This action cannot be undone.
-            </p>
-            <div class="flex gap-3">
-              <button
-                @click="showDeleteModal = false"
-                class="flex-1 bg-admin-surface-raised text-admin-text-primary px-4 py-2 rounded-lg hover:bg-admin-surface-raised transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                @click="deleteBanner"
-                :disabled="deleting"
-                class="flex-1 bg-admin-state-danger-text text-admin-text-inverse px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
-              >
-                {{ deleting ? 'Deleting...' : 'Delete' }}
-              </button>
-            </div>
-          </div>
+    <UiDialog :open="showDeleteModal" @update:open="(value) => { if (!value) showDeleteModal = false }">
+      <div class="text-center">
+        <div class="mx-auto w-12 h-12 bg-admin-state-danger-soft rounded-full flex items-center justify-center mb-4">
+          <svg class="w-6 h-6 text-admin-state-danger-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </div>
+        <UiDialogTitle>Delete Banner</UiDialogTitle>
+        <UiDialogDescription class="mb-6">
+          Are you sure you want to delete this banner? This action cannot be undone.
+        </UiDialogDescription>
+        <div class="flex gap-3">
+          <UiButton
+            @click="showDeleteModal = false"
+            variant="secondary"
+            class="flex-1"
+          >
+            Cancel
+          </UiButton>
+          <UiButton
+            @click="deleteBanner"
+            :disabled="deleting"
+            variant="danger"
+            class="flex-1"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete' }}
+          </UiButton>
         </div>
       </div>
-    </Teleport>
+    </UiDialog>
 
-    <!-- Toast Notification -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition ease-out duration-300"
-        enter-from-class="opacity-0 translate-y-2"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition ease-in duration-200"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 translate-y-2"
-      >
-        <div
-          v-if="toast.show"
-          :class="[
-            'fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50',
-            toast.type === 'success' ? 'bg-admin-state-success-text text-admin-text-inverse' : 'bg-admin-state-danger-text text-admin-text-inverse'
-          ]"
-        >
-          <svg v-if="toast.type === 'success'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          {{ toast.message }}
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
+
 definePageMeta({ layout: 'admin' })
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
@@ -592,12 +543,7 @@ const showDeleteModal = ref(false)
 const bannerToDelete = ref<Banner | null>(null)
 const deleting = ref(false)
 
-// Toast state
-const toast = ref({
-  show: false,
-  type: 'success' as 'success' | 'error',
-  message: '',
-})
+// Toast notifications use Sonner (imported from sonner)
 
 // Get full image URL
 function getFullImageUrl(imageUrl: string): string {
@@ -932,11 +878,13 @@ async function deleteBanner() {
   }
 }
 
+// Toast function using vue-sonner
 function showToast(type: 'success' | 'error', message: string) {
-  toast.value = { show: true, type, message }
-  setTimeout(() => {
-    toast.value.show = false
-  }, 3000)
+  if (type === 'success') {
+    toast.success(message, { duration: 3000 })
+  } else {
+    toast.error(message, { duration: 3000 })
+  }
 }
 
 function isExpired(expiresAt: string | null): boolean {

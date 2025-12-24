@@ -1,10 +1,10 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-semibold text-admin-text-primary">{{ tenantName || 'Dashboard' }}</h1>
-        <p class="text-sm text-admin-text-secondary mt-1">Welcome to your admin dashboard</p>
+        <h1 class="text-3xl font-semibold text-admin-text-primary">{{ tenantName || 'Dashboard' }}</h1>
+        <p class="text-sm text-admin-text-secondary mt-2">Welcome to your admin dashboard</p>
       </div>
       <UiButton
         @click="logout"
@@ -19,12 +19,13 @@
     </div>
 
     <!-- Quick Actions Grid -->
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <!-- Products Card -->
-      <NuxtLink
-        :to="`/admin/${tenantId}/products`"
-        class="bg-admin-surface-base rounded-lg border border-admin-border p-6 hover:shadow-md hover:border-admin-border-strong transition-all group"
-      >
+      <UiCard variant="elevated" class="hover:shadow-lg transition-shadow">
+        <NuxtLink
+          :to="`/admin/${tenantId}/products`"
+          class="block p-6 group"
+        >
         <div class="w-12 h-12 bg-admin-brand-soft rounded-lg flex items-center justify-center mb-4 group-hover:bg-admin-brand-subtle transition-colors">
           <svg class="w-6 h-6 text-admin-brand-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -38,13 +39,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </div>
-      </NuxtLink>
+        </NuxtLink>
+      </UiCard>
 
       <!-- Store Settings Card -->
-      <NuxtLink
-        :to="`/admin/${tenantId}/store-settings#banners`"
-        class="bg-admin-surface-base rounded-lg border border-admin-border p-6 hover:shadow-md hover:border-admin-border-strong transition-all group"
-      >
+      <UiCard variant="elevated" class="hover:shadow-lg transition-shadow">
+        <NuxtLink
+          :to="`/admin/${tenantId}/store-settings#banners`"
+          class="block p-6 group"
+        >
         <div class="w-12 h-12 bg-admin-brand-soft rounded-lg flex items-center justify-center mb-4 group-hover:bg-admin-brand-subtle transition-colors">
           <svg class="w-6 h-6 text-admin-brand-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -59,13 +62,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </div>
-      </NuxtLink>
+        </NuxtLink>
+      </UiCard>
 
       <!-- Account Card -->
-      <NuxtLink
-        :to="`/admin/${tenantId}/account`"
-        class="bg-admin-surface-base rounded-lg border border-admin-border p-6 hover:shadow-md hover:border-admin-border-strong transition-all group"
-      >
+      <UiCard variant="elevated" class="hover:shadow-lg transition-shadow">
+        <NuxtLink
+          :to="`/admin/${tenantId}/account`"
+          class="block p-6 group"
+        >
         <div class="w-12 h-12 bg-admin-brand-soft rounded-lg flex items-center justify-center mb-4 group-hover:bg-admin-brand-subtle transition-colors">
           <svg class="w-6 h-6 text-admin-brand-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -79,11 +84,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </div>
-      </NuxtLink>
+        </NuxtLink>
+      </UiCard>
     </div>
 
     <!-- Stats Overview (placeholder for future) -->
-    <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+    <UiCard variant="default" class="p-6">
       <h2 class="text-lg font-medium text-admin-text-primary mb-4">Overview</h2>
       <div class="grid gap-4 sm:grid-cols-3">
         <div class="text-center p-4 bg-admin-surface-raised rounded-lg">
@@ -102,7 +108,7 @@
       <p class="text-xs text-admin-text-muted mt-4 text-center">
         Stats will be available when product sync is implemented
       </p>
-    </div>
+    </UiCard>
   </div>
 </template>
 

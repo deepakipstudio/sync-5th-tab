@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { cva, type VariantProps } from 'class-variance-authority'
+import { cva } from 'class-variance-authority'
 import { cn } from '~/lib/utils'
 
 const alertVariants = cva(
@@ -30,7 +30,9 @@ const alertVariants = cva(
   }
 )
 
-export interface AlertProps extends VariantProps<typeof alertVariants> {}
+interface AlertProps {
+  variant?: 'default' | 'error' | 'warning' | 'info' | 'success'
+}
 
 withDefaults(defineProps<AlertProps>(), {
   variant: 'default',

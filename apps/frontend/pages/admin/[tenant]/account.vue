@@ -2,8 +2,8 @@
   <div class="space-y-8">
     <!-- Header -->
     <div>
-      <h1 class="text-2xl font-semibold text-admin-text-primary">Account</h1>
-      <p class="text-sm text-admin-text-secondary mt-1">View your account details and settings</p>
+      <h1 class="text-3xl font-semibold text-admin-text-primary">Account</h1>
+      <p class="text-sm text-admin-text-secondary mt-2">View your account details and settings</p>
     </div>
 
     <!-- Loading State -->

@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { cva, type VariantProps } from 'class-variance-authority'
+import { cva } from 'class-variance-authority'
 import { cn } from '~/lib/utils'
 
 const badgeVariants = cva(
@@ -29,7 +29,9 @@ const badgeVariants = cva(
   }
 )
 
-export interface BadgeProps extends VariantProps<typeof badgeVariants> {}
+interface BadgeProps {
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info'
+}
 
 withDefaults(defineProps<BadgeProps>(), {
   variant: 'default',

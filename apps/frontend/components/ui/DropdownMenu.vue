@@ -1,7 +1,7 @@
 <template>
-  <DropdownMenuRoot>
+  <DropdownMenuRoot :open="open" @update:open="(value) => $emit('update:open', value)">
     <DropdownMenuTrigger
-      :class="cn('outline-none', $attrs.class)"
+      :class="cn('outline-none', ($attrs.class as string))"
       v-bind="$attrs"
     >
       <slot name="trigger" />
@@ -10,7 +10,7 @@
       <DropdownMenuContent
         :class="cn(
           'z-50 min-w-[8rem] overflow-hidden rounded-lg border border-admin-border bg-admin-surface-base p-1 text-admin-text-primary shadow-lg',
-          $attrs.class
+          ($attrs.class as string)
         )"
         v-bind="$attrs"
       >
@@ -28,5 +28,17 @@ import {
   DropdownMenuContent,
 } from 'radix-vue'
 import { cn } from '~/lib/utils'
+
+export interface DropdownMenuProps {
+  open?: boolean
+}
+
+withDefaults(defineProps<DropdownMenuProps>(), {
+  open: false,
+})
+
+defineEmits<{
+  'update:open': [value: boolean]
+}>()
 </script>
 
