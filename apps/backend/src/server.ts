@@ -13,9 +13,12 @@ import {
   deleteTenantBanner,
   getStoreSettings,
   updateBrandSettings,
+  getTenantSettings,
+  syncBrand,
   uploadBannerImage,
   handleMulterError,
   uploadProductImages,
+  uploadCategoryImage,
 } from './routes/admin';
 import {
   getTenantProducts as getAdminTenantProducts,
@@ -41,6 +44,16 @@ import { getMe } from './routes/me';
 import { getTenantInfo, getTenantBranding } from './routes/tenantInfo';
 import { getAdminAccount } from './routes/account';
 import { debugMTEndpoints } from './routes/debug';
+import {
+  getTenantCategories,
+  getTenantCategory,
+  postTenantCategory,
+  putTenantCategory,
+  deleteTenantCategory,
+  postCategoryProducts,
+  deleteCategoryProduct,
+  putCategoriesReorder,
+} from './routes/categories';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -70,6 +83,8 @@ app.get('/:tenant/products', getTenantProducts);
 app.get('/admin/:tenant/account', getAdminAccount);
 
 // Store settings routes
+app.get('/admin/:tenant/settings', getTenantSettings);
+app.post('/admin/:tenant/sync-brand', syncBrand);
 app.get('/admin/:tenant/store-settings', getStoreSettings);
 app.put('/admin/:tenant/store-settings/brand', updateBrandSettings);
 
@@ -79,6 +94,16 @@ app.get('/admin/:tenant/banners/:id', getTenantBanner);
 app.post('/admin/:tenant/banners', uploadBannerImage, handleMulterError, postTenantBanner);
 app.put('/admin/:tenant/banners/:id', uploadBannerImage, handleMulterError, putTenantBanner);
 app.delete('/admin/:tenant/banners/:id', deleteTenantBanner);
+
+// Category routes
+app.get('/admin/:tenant/categories', getTenantCategories);
+app.get('/admin/:tenant/categories/:id', getTenantCategory);
+app.post('/admin/:tenant/categories', uploadCategoryImage, handleMulterError, postTenantCategory);
+app.put('/admin/:tenant/categories/:id', uploadCategoryImage, handleMulterError, putTenantCategory);
+app.delete('/admin/:tenant/categories/:id', deleteTenantCategory);
+app.post('/admin/:tenant/categories/:id/products', postCategoryProducts);
+app.delete('/admin/:tenant/categories/:id/products/:productId', deleteCategoryProduct);
+app.put('/admin/:tenant/categories/reorder', putCategoriesReorder);
 
 // Product routes
 app.get('/admin/:tenant/products', getAdminTenantProducts);

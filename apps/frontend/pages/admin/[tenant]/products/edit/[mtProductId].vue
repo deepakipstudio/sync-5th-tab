@@ -236,6 +236,61 @@
         />
       </div>
 
+      <!-- Categories -->
+      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Categories</h2>
+        <div v-if="loadingCategories" class="text-sm text-admin-text-secondary">
+          Loading categories...
+        </div>
+        <div v-else-if="availableCategories.length === 0" class="text-sm text-admin-text-secondary">
+          No categories available. <NuxtLink :to="`/admin/${route.params.tenant}/products`" class="text-admin-brand-strong hover:underline">Create a category</NuxtLink> first.
+        </div>
+        <div v-else class="space-y-3">
+          <!-- Recently Used Categories -->
+          <div v-if="recentlyUsedCategories.length > 0" class="space-y-2">
+            <UiLabel class="text-sm font-medium text-admin-text-secondary">Recently Used</UiLabel>
+            <div class="flex flex-wrap gap-2">
+              <UiButton
+                v-for="category in recentlyUsedCategories"
+                :key="category.id"
+                type="button"
+                @click="toggleCategory(category.id)"
+                :variant="selectedCategoryIds.includes(category.id) ? 'default' : 'outline'"
+                size="sm"
+                class="text-xs"
+              >
+                {{ category.name }}
+                <svg v-if="selectedCategoryIds.includes(category.id)" class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </UiButton>
+            </div>
+          </div>
+
+          <!-- All Categories -->
+          <div class="space-y-2">
+            <UiLabel class="text-sm font-medium text-admin-text-secondary">All Categories</UiLabel>
+            <div class="border border-admin-border rounded-lg p-3 max-h-48 overflow-y-auto">
+              <div class="space-y-2">
+                <div
+                  v-for="category in availableCategories"
+                  :key="category.id"
+                  class="flex items-center gap-2"
+                >
+                  <UiCheckbox
+                    :checked="selectedCategoryIds.includes(category.id)"
+                    @update:checked="(checked) => toggleCategory(category.id, checked)"
+                  />
+                  <UiLabel class="text-sm cursor-pointer flex-1">
+                    {{ category.name }}
+                  </UiLabel>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Variants List -->
       <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
         <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Variants ({{ variants.length }})</h2>
@@ -401,6 +456,13 @@ const isDragging = ref(false)
 const featuredImageId = ref<string | null>(null)
 const expandedVariants = ref<string[]>([])
 
+// Category management
+const { fetchCategories } = useCategory()
+const availableCategories = ref<any[]>([])
+const selectedCategoryIds = ref<string[]>([])
+const loadingCategories = ref(false)
+const recentlyUsedCategories = ref<any[]>([])
+
 // Initialize with route state or cache
 const routeState = getRouteState<{
   mtProductId?: string
@@ -490,6 +552,11 @@ async function fetchProduct() {
     existingImages.value = data.product.images || []
     form.value.description = data.product.description || ''
     form.value.visible = data.product.visible
+    
+    // Populate selected categories
+    if (data.product.categories) {
+      selectedCategoryIds.value = data.product.categories.map((cat: any) => cat.id)
+    }
 
     // Fetch variants with MT data
     await fetchVariants()
@@ -636,6 +703,76 @@ function toggleLocationDetails(variantId: string) {
   }
 }
 
+// Category functions
+async function loadCategories() {
+  loadingCategories.value = true
+  try {
+    availableCategories.value = await fetchCategories(tenantId)
+    loadRecentlyUsedCategories()
+    
+    // If product has categories, ensure they're selected
+    if (product.value?.categories) {
+      product.value.categories.forEach((cat: any) => {
+        if (!selectedCategoryIds.value.includes(cat.id)) {
+          selectedCategoryIds.value.push(cat.id)
+        }
+      })
+    }
+  } catch (err: any) {
+    console.error('Error loading categories:', err)
+    availableCategories.value = []
+  } finally {
+    loadingCategories.value = false
+  }
+}
+
+function loadRecentlyUsedCategories() {
+  try {
+    const stored = localStorage.getItem(`recently-used-categories:${tenantId}`)
+    if (stored) {
+      const recentIds = JSON.parse(stored) as string[]
+      recentlyUsedCategories.value = availableCategories.value
+        .filter(cat => recentIds.includes(cat.id))
+        .slice(0, 5)
+    }
+  } catch (e) {
+    console.error('Error loading recently used categories:', e)
+  }
+}
+
+function toggleCategory(categoryId: string, checked?: boolean) {
+  const index = selectedCategoryIds.value.indexOf(categoryId)
+  const isChecked = checked !== undefined ? checked : index === -1
+
+  if (isChecked && index === -1) {
+    selectedCategoryIds.value.push(categoryId)
+    // Update recently used
+    updateRecentlyUsedCategories(categoryId)
+  } else if (!isChecked && index > -1) {
+    selectedCategoryIds.value.splice(index, 1)
+  }
+}
+
+function updateRecentlyUsedCategories(categoryId: string) {
+  try {
+    const key = `recently-used-categories:${tenantId}`
+    const stored = localStorage.getItem(key)
+    const recentIds = stored ? JSON.parse(stored) as string[] : []
+    
+    // Remove if already exists
+    const filtered = recentIds.filter(id => id !== categoryId)
+    // Add to front
+    filtered.unshift(categoryId)
+    // Keep only last 5
+    const updated = filtered.slice(0, 5)
+    
+    localStorage.setItem(key, JSON.stringify(updated))
+    loadRecentlyUsedCategories()
+  } catch (e) {
+    console.error('Error updating recently used categories:', e)
+  }
+}
+
 // Save product
 async function saveProduct() {
   try {
@@ -645,6 +782,16 @@ async function saveProduct() {
     const formData = new FormData()
     formData.append('description', form.value.description || '')
     formData.append('visible', String(form.value.visible))
+
+    // Add category IDs
+    if (selectedCategoryIds.value.length > 0) {
+      selectedCategoryIds.value.forEach(categoryId => {
+        formData.append('categoryIds[]', categoryId)
+      })
+    } else {
+      // Send empty array to clear categories
+      formData.append('categoryIds[]', '')
+    }
 
     // Add new images
     newImages.value.forEach((img, index) => {
@@ -692,6 +839,7 @@ async function saveProduct() {
 
 onMounted(() => {
   fetchProduct()
+  loadCategories()
 })
 </script>
 

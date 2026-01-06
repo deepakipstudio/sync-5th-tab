@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { prisma } from '../prisma';
 import { storage } from '../services/storage';
+import { env } from '../config';
+import { syncTenantBrand } from '../services/tenantBrandService';
 
 // Allowed image types
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -44,9 +46,45 @@ export const uploadProductImages = upload.fields([
   { name: 'images', maxCount: 20 }, // Support up to 20 images
 ]);
 
+// Multer middleware for category image upload
+export const uploadCategoryImage = upload.single('image');
+
 // Helper to validate tenant exists
 async function validateTenant(tenantId: string) {
   return prisma.tenant.findUnique({ where: { id: tenantId } });
+}
+
+// Helper to validate tenant and session (for authenticated routes)
+async function validateTenantAndSession(req: Request, tenantId: string) {
+  const cookieName = env.COOKIE_NAME || 'sync5_session';
+  const sessionId = req.cookies?.[cookieName];
+
+  if (!sessionId) {
+    return { error: 'Not authenticated', status: 401 };
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { tenant: true },
+  });
+
+  if (!session) {
+    return { error: 'Invalid session', status: 401 };
+  }
+
+  if (new Date(session.expiresAt).getTime() <= Date.now()) {
+    return { error: 'Session expired', status: 401 };
+  }
+
+  if (session.tenantId !== tenantId) {
+    return { error: 'Tenant mismatch', status: 403 };
+  }
+
+  if (session.role !== 'admin') {
+    return { error: 'Admin access required', status: 403 };
+  }
+
+  return { session, tenant: session.tenant };
 }
 
 // GET /admin/:tenant/banners -> list all banners for tenant
@@ -57,13 +95,18 @@ export async function getTenantBanners(req: Request, res: Response) {
 
   const banners = await prisma.banner.findMany({
     where: { tenantId: dbTenant.id },
+    include: {
+      category: true,
+    },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
   });
 
   // Add imageUrl to each banner for frontend compatibility
+  // Filter out soft-deleted categories
   const bannersWithUrl = banners.map(banner => ({
     ...banner,
     imageUrl: storage.getFileUrl(banner.filename),
+    category: banner.category && banner.category.deletedAt === null ? banner.category : null,
   }));
 
   res.json({ banners: bannersWithUrl });
@@ -77,6 +120,9 @@ export async function getTenantBanner(req: Request, res: Response) {
 
   const banner = await prisma.banner.findFirst({
     where: { id, tenantId: dbTenant.id },
+    include: {
+      category: true,
+    },
   });
 
   if (!banner) return res.status(404).json({ error: 'banner not found' });
@@ -85,6 +131,7 @@ export async function getTenantBanner(req: Request, res: Response) {
     banner: {
       ...banner,
       imageUrl: storage.getFileUrl(banner.filename),
+      category: banner.category && banner.category.deletedAt === null ? banner.category : null,
     },
   });
 }
@@ -102,7 +149,22 @@ export async function postTenantBanner(req: Request, res: Response) {
     }
 
     // Parse form fields
-    const { collectionId, productClass, expiresAt, sortOrder, visible } = req.body;
+    const { categoryId, productClass, expiresAt, sortOrder, visible } = req.body;
+
+    // Verify category belongs to tenant if provided
+    if (categoryId) {
+      const category = await prisma.category.findFirst({
+        where: {
+          id: categoryId,
+          tenantId: dbTenant.id,
+          deletedAt: null, // Only allow active categories
+        },
+      });
+
+      if (!category) {
+        return res.status(400).json({ error: 'Category not found or belongs to different tenant' });
+      }
+    }
 
     // Save file to storage
     const filename = await storage.saveFile(
@@ -118,7 +180,7 @@ export async function postTenantBanner(req: Request, res: Response) {
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         size: req.file.size,
-        collectionId: collectionId ? parseInt(collectionId, 10) : null,
+        categoryId: categoryId || null,
         productClass: productClass || null,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         sortOrder: sortOrder ? parseInt(sortOrder, 10) : null,
@@ -153,7 +215,7 @@ export async function putTenantBanner(req: Request, res: Response) {
     if (!existingBanner) return res.status(404).json({ error: 'banner not found' });
 
     // Parse form fields
-    const { collectionId, productClass, expiresAt, sortOrder, visible } = req.body;
+    const { categoryId, productClass, expiresAt, sortOrder, visible } = req.body;
 
     // Build update data
     const updateData: any = {};
@@ -176,9 +238,22 @@ export async function putTenantBanner(req: Request, res: Response) {
       updateData.size = req.file.size;
     }
 
-    // Update other fields if provided
-    if (collectionId !== undefined) {
-      updateData.collectionId = collectionId ? parseInt(collectionId, 10) : null;
+    // Verify category belongs to tenant if provided
+    if (categoryId !== undefined) {
+      if (categoryId) {
+        const category = await prisma.category.findFirst({
+          where: {
+            id: categoryId,
+            tenantId: dbTenant.id,
+            deletedAt: null, // Only allow active categories
+          },
+        });
+
+        if (!category) {
+          return res.status(400).json({ error: 'Category not found or belongs to different tenant' });
+        }
+      }
+      updateData.categoryId = categoryId || null;
     }
     if (productClass !== undefined) {
       updateData.productClass = productClass || null;
@@ -237,12 +312,92 @@ export async function deleteTenantBanner(req: Request, res: Response) {
   }
 }
 
+// GET /admin/:tenant/settings -> get tenant brand settings
+export async function getTenantSettings(req: Request, res: Response) {
+  try {
+    const { tenant } = req.params;
+    const dbTenant = await validateTenant(tenant);
+    if (!dbTenant) return res.status(404).json({ error: 'tenant not found' });
+
+    // Get TenantBrand record
+    const tenantBrand = await prisma.tenantBrand.findUnique({
+      where: { tenantId: dbTenant.id },
+    });
+
+    if (!tenantBrand) {
+      return res.status(404).json({ error: 'Brand settings not found. Please sync from Marianatek.' });
+    }
+
+    res.json({
+      brand: {
+        id: tenantBrand.id,
+        brandName: tenantBrand.brandName,
+        primaryColor: tenantBrand.primaryColor,
+        primaryForegroundColor: tenantBrand.primaryForegroundColor,
+        secondaryColor: tenantBrand.secondaryColor,
+        secondaryForegroundColor: tenantBrand.secondaryForegroundColor,
+        logoLightUrl: tenantBrand.logoLightUrl,
+        logoDarkUrl: tenantBrand.logoDarkUrl,
+        createdAt: tenantBrand.createdAt,
+        updatedAt: tenantBrand.updatedAt,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching tenant settings:', error);
+    res.status(500).json({ error: 'Failed to fetch tenant settings' });
+  }
+}
+
+// POST /admin/:tenant/sync-brand -> sync brand data from Marianatek
+export async function syncBrand(req: Request, res: Response) {
+  try {
+    const { tenant } = req.params;
+    
+    // Validate tenant and session
+    const validation = await validateTenantAndSession(req, tenant);
+    if ('error' in validation) {
+      return res.status(validation.status).json({ error: validation.error });
+    }
+
+    const { session, tenant: dbTenant } = validation;
+
+    // Sync brand data from Marianatek
+    const tenantBrand = await syncTenantBrand(
+      dbTenant.id,
+      dbTenant.mtSubdomain,
+      session.accessToken
+    );
+
+    res.json({
+      ok: true,
+      brand: {
+        id: tenantBrand.id,
+        brandName: tenantBrand.brandName,
+        primaryColor: tenantBrand.primaryColor,
+        primaryForegroundColor: tenantBrand.primaryForegroundColor,
+        secondaryColor: tenantBrand.secondaryColor,
+        secondaryForegroundColor: tenantBrand.secondaryForegroundColor,
+        logoLightUrl: tenantBrand.logoLightUrl,
+        logoDarkUrl: tenantBrand.logoDarkUrl,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error syncing brand:', error);
+    res.status(500).json({ error: error.message || 'Failed to sync brand data' });
+  }
+}
+
 // GET /admin/:tenant/store-settings -> get tenant store settings (brand colors, banners)
 export async function getStoreSettings(req: Request, res: Response) {
   try {
     const { tenant } = req.params;
     const dbTenant = await validateTenant(tenant);
     if (!dbTenant) return res.status(404).json({ error: 'tenant not found' });
+
+    // Get TenantBrand record for brand colors
+    const tenantBrand = await prisma.tenantBrand.findUnique({
+      where: { tenantId: dbTenant.id },
+    });
 
     // Get banners
     const banners = await prisma.banner.findMany({
@@ -257,8 +412,8 @@ export async function getStoreSettings(req: Request, res: Response) {
 
     res.json({
       brandSettings: {
-        primaryBrandColor: dbTenant.primaryBrandColor,
-        secondaryBrandColor: dbTenant.secondaryBrandColor,
+        primaryBrandColor: tenantBrand?.primaryColor || null,
+        secondaryBrandColor: tenantBrand?.secondaryColor || null,
       },
       banners: bannersWithUrl,
     });
@@ -269,6 +424,8 @@ export async function getStoreSettings(req: Request, res: Response) {
 }
 
 // PUT /admin/:tenant/store-settings/brand -> update brand colors
+// Note: Brand colors are now synced from Marianatek, but we keep this endpoint
+// for backward compatibility or manual overrides if needed
 export async function updateBrandSettings(req: Request, res: Response) {
   try {
     const { tenant } = req.params;
@@ -286,18 +443,24 @@ export async function updateBrandSettings(req: Request, res: Response) {
       return res.status(400).json({ error: 'Invalid secondary brand color format' });
     }
 
-    const updated = await prisma.tenant.update({
-      where: { id: dbTenant.id },
-      data: {
-        primaryBrandColor: primaryBrandColor || null,
-        secondaryBrandColor: secondaryBrandColor || null,
+    // Update or create TenantBrand record
+    const tenantBrand = await prisma.tenantBrand.upsert({
+      where: { tenantId: dbTenant.id },
+      update: {
+        primaryColor: primaryBrandColor || null,
+        secondaryColor: secondaryBrandColor || null,
+      },
+      create: {
+        tenantId: dbTenant.id,
+        primaryColor: primaryBrandColor || null,
+        secondaryColor: secondaryBrandColor || null,
       },
     });
 
     res.json({
       brandSettings: {
-        primaryBrandColor: updated.primaryBrandColor,
-        secondaryBrandColor: updated.secondaryBrandColor,
+        primaryBrandColor: tenantBrand.primaryColor,
+        secondaryBrandColor: tenantBrand.secondaryColor,
       },
     });
   } catch (error: any) {

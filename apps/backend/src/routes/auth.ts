@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { env, getMTOAuthURLs } from '../config';
 import { prisma } from '../prisma';
 import { exchangeCodeForTokens } from '../services/oauth';
+import { syncTenantBrand } from '../services/tenantBrandService';
 import crypto from 'crypto';
 
 // GET /auth/mt/redirect -> Build Marianatek authorize URL (PKCE)
@@ -82,6 +83,15 @@ export async function authCallback(req: Request, res: Response) {
       sameSite: 'lax',
       maxAge: (Number(process.env.SESSION_MAX_AGE_SECONDS || 86400)) * 1000,
     });
+
+    // Trigger brand sync in background (non-blocking)
+    // Only sync for admin role
+    if (role === 'admin') {
+      syncTenantBrand(tenant.id, tenant.mtSubdomain, tokens.access_token).catch((error) => {
+        // Log error but don't fail login
+        console.warn(`[authCallback] Failed to sync brand for tenant ${tenant.id}:`, error);
+      });
+    }
 
     res.json({ ok: true, role, tenantId: tenant.id, tenant: tenant.slug });
   } catch (e: any) {

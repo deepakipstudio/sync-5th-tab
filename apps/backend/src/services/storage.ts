@@ -6,9 +6,10 @@ import { randomUUID } from 'crypto';
 const BANNERS_DIR = path.join(process.cwd(), 'uploads', 'banners');
 const PRODUCTS_DIR = path.join(process.cwd(), 'uploads', 'products');
 const VARIANTS_DIR = path.join(process.cwd(), 'uploads', 'variants');
+const CATEGORIES_DIR = path.join(process.cwd(), 'uploads', 'categories');
 
 // Ensure upload directories exist
-[BANNERS_DIR, PRODUCTS_DIR, VARIANTS_DIR].forEach(dir => {
+[BANNERS_DIR, PRODUCTS_DIR, VARIANTS_DIR, CATEGORIES_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -26,6 +27,9 @@ export interface StorageService {
   saveImage(buffer: Buffer, originalName: string, mimeType: string, type: 'product' | 'variant'): Promise<string>;
   deleteImage(filename: string, type: 'product' | 'variant'): Promise<void>;
   getImageUrl(filename: string, type: 'product' | 'variant'): string;
+  saveCategoryImage(buffer: Buffer, originalName: string, mimeType: string): Promise<string>;
+  deleteCategoryImage(filename: string): Promise<void>;
+  getCategoryImageUrl(filename: string): string;
 }
 
 /**
@@ -119,6 +123,42 @@ export const localStorageService: StorageService = {
   getImageUrl(filename: string, type: 'product' | 'variant'): string {
     const folder = type === 'product' ? 'products' : 'variants';
     return `/uploads/${folder}/${filename}`;
+  },
+
+  /**
+   * Save category image
+   */
+  async saveCategoryImage(buffer: Buffer, originalName: string, mimeType: string): Promise<string> {
+    const ext = getExtension(mimeType);
+    const filename = `${randomUUID()}${ext}`;
+    const filePath = path.join(CATEGORIES_DIR, filename);
+    
+    await fs.promises.writeFile(filePath, buffer);
+    
+    return filename;
+  },
+
+  /**
+   * Delete category image
+   */
+  async deleteCategoryImage(filename: string): Promise<void> {
+    const filePath = path.join(CATEGORIES_DIR, filename);
+    
+    try {
+      await fs.promises.unlink(filePath);
+    } catch (err: any) {
+      // Ignore if file doesn't exist
+      if (err.code !== 'ENOENT') {
+        throw err;
+      }
+    }
+  },
+
+  /**
+   * Get the URL path for serving category image
+   */
+  getCategoryImageUrl(filename: string): string {
+    return `/uploads/categories/${filename}`;
   },
 };
 

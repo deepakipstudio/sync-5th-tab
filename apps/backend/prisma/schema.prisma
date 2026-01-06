@@ -11,20 +11,20 @@ datasource db {
 }
 
 model Tenant {
-  id                  String   @id @default(uuid(7))
-  name                String
-  slug                String   @unique
-  mtSubdomain         String
-  clientId            String
-  clientSecret        String?
-  primaryBrandColor   String?
-  secondaryBrandColor String?
-  createdAt           DateTime @default(now())
+  id          String   @id @default(uuid(7))
+  name        String
+  slug        String   @unique
+  mtSubdomain String
+  clientId    String
+  clientSecret String?
+  createdAt   DateTime @default(now())
 
-  products Product[]
-  sessions Session[]
-  banners  Banner[]
-  users    User[]
+  products    Product[]
+  sessions    Session[]
+  banners     Banner[]
+  users       User[]
+  tenantBrand TenantBrand?
+  categories  Category[]
 }
 
 model Product {
@@ -40,6 +40,7 @@ model Product {
 
   variants ProductVariant[]
   images   ProductImage[]
+  categories ProductCategory[]
 
   @@unique([tenantId, mtProductId])
   @@index([tenantId])
@@ -69,7 +70,8 @@ model Banner {
   originalName String // original upload name
   mimeType     String // image/jpeg, image/png, etc.
   size         Int // file size in bytes
-  collectionId Int?
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
   productClass String?
   expiresAt    DateTime?
   sortOrder    Int?
@@ -78,6 +80,7 @@ model Banner {
 
   @@index([tenantId])
   @@index([visible])
+  @@index([categoryId])
 }
 
 model ProductVariant {
@@ -132,4 +135,54 @@ model User {
 
   @@index([tenantId])
   @@index([role])
+}
+
+model TenantBrand {
+  id                    String   @id @default(uuid())
+  tenantId              String   @unique
+  tenant                Tenant   @relation(fields: [tenantId], references: [id])
+  brandName             String?
+  primaryColor          String?
+  primaryForegroundColor String?
+  secondaryColor        String?
+  secondaryForegroundColor String?
+  logoLightUrl          String?
+  logoDarkUrl           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(uuid(7))
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  description String?
+  slug        String
+  imageUrl    String?
+  sortOrder   Int?
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    ProductCategory[]
+  banners     Banner[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([sortOrder])
+  @@index([deletedAt])
+}
+
+model ProductCategory {
+  id          String   @id @default(uuid(7))
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
 }

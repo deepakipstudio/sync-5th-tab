@@ -66,6 +66,16 @@ export async function getTenantProducts(req: Request, res: Response) {
           where: { productId: { not: null } },
           orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
         },
+        categories: {
+          where: {
+            category: {
+              deletedAt: null, // Only include active categories
+            },
+          },
+          include: {
+            category: true,
+          },
+        },
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
@@ -104,6 +114,9 @@ export async function getTenantProducts(req: Request, res: Response) {
             ...variant,
             images: [], // Will be loaded separately if needed
           })),
+          categories: product.categories
+            .filter(pc => pc.category && pc.category.deletedAt === null)
+            .map(pc => pc.category),
         };
       })
     );
@@ -348,7 +361,7 @@ export async function postTenantProduct(req: Request, res: Response) {
       return res.status(result.status || 500).json({ error: result.error });
     }
 
-    const { mtProductId, description, visible = 'true' } = req.body;
+    const { mtProductId, description, visible = 'true', categoryIds } = req.body;
 
     if (!mtProductId) {
       return res.status(400).json({ error: 'mtProductId is required' });
@@ -457,6 +470,31 @@ export async function postTenantProduct(req: Request, res: Response) {
 
       await Promise.all(imagePromises);
 
+      // Handle category assignments if provided
+      if (categoryIds && Array.isArray(categoryIds) && categoryIds.length > 0) {
+        // Verify all categories belong to tenant and are active
+        const categories = await tx.category.findMany({
+          where: {
+            id: { in: categoryIds },
+            tenantId: tenant,
+            deletedAt: null, // Only active categories
+          },
+        });
+
+        if (categories.length !== categoryIds.length) {
+          throw new Error('Some categories not found or belong to different tenant');
+        }
+
+        // Create category associations
+        await tx.productCategory.createMany({
+          data: categoryIds.map((categoryId: string) => ({
+            productId: newProduct.id,
+            categoryId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
       return newProduct;
     });
 
@@ -468,6 +506,16 @@ export async function postTenantProduct(req: Request, res: Response) {
         images: {
           orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
         },
+        categories: {
+          where: {
+            category: {
+              deletedAt: null, // Only include active categories
+            },
+          },
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -478,6 +526,9 @@ export async function postTenantProduct(req: Request, res: Response) {
           ...img,
           imageUrl: storage.getImageUrl(img.filename, 'product'),
         })),
+        categories: createdProduct!.categories
+          .filter(pc => pc.category && pc.category.deletedAt === null)
+          .map(pc => pc.category),
       },
     });
   } catch (error: any) {
@@ -509,6 +560,16 @@ export async function getTenantProduct(req: Request, res: Response) {
         },
         images: {
           orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+        },
+        categories: {
+          where: {
+            category: {
+              deletedAt: null, // Only include active categories
+            },
+          },
+          include: {
+            category: true,
+          },
         },
       },
     });
@@ -552,6 +613,9 @@ export async function getTenantProduct(req: Request, res: Response) {
             imageUrl: storage.getImageUrl(img.filename, 'variant'),
           })),
         })),
+        categories: product.categories
+          .filter(pc => pc.category && pc.category.deletedAt === null)
+          .map(pc => pc.category),
       },
     });
   } catch (error: any) {
@@ -578,7 +642,7 @@ export async function putTenantProduct(req: Request, res: Response) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const { description, visible, sortOrder } = req.body;
+    const { description, visible, sortOrder, categoryIds } = req.body;
 
     // Normalize visible to boolean (handle both string and boolean)
     let visibleValue: boolean | undefined = undefined;
@@ -662,6 +726,42 @@ export async function putTenantProduct(req: Request, res: Response) {
         }
       }
 
+      // Handle category assignments if provided
+      if (categoryIds !== undefined) {
+        const categoryIdsArray = Array.isArray(categoryIds) ? categoryIds : [];
+        
+        if (categoryIdsArray.length > 0) {
+          // Verify all categories belong to tenant and are active
+          const categories = await tx.category.findMany({
+            where: {
+              id: { in: categoryIdsArray },
+              tenantId: tenant,
+              deletedAt: null, // Only active categories
+            },
+          });
+
+          if (categories.length !== categoryIdsArray.length) {
+            throw new Error('Some categories not found or belong to different tenant');
+          }
+        }
+
+        // Remove all existing category associations
+        await tx.productCategory.deleteMany({
+          where: { productId: id },
+        });
+
+        // Create new category associations
+        if (categoryIdsArray.length > 0) {
+          await tx.productCategory.createMany({
+            data: categoryIdsArray.map((categoryId: string) => ({
+              productId: id,
+              categoryId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
       // Update product fields
       await tx.product.update({
         where: { id },
@@ -680,6 +780,16 @@ export async function putTenantProduct(req: Request, res: Response) {
         images: {
           orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
         },
+        categories: {
+          where: {
+            category: {
+              deletedAt: null, // Only include active categories
+            },
+          },
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -690,6 +800,9 @@ export async function putTenantProduct(req: Request, res: Response) {
           ...img,
           imageUrl: storage.getImageUrl(img.filename, 'product'),
         })),
+        categories: updatedProduct!.categories
+          .filter(pc => pc.category && pc.category.deletedAt === null)
+          .map(pc => pc.category),
       },
     });
   } catch (error: any) {
@@ -781,6 +894,16 @@ export async function getTenantProductByMtId(req: Request, res: Response) {
         images: {
           orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
         },
+        categories: {
+          where: {
+            category: {
+              deletedAt: null, // Only include active categories
+            },
+          },
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -823,6 +946,9 @@ export async function getTenantProductByMtId(req: Request, res: Response) {
             imageUrl: storage.getImageUrl(img.filename, 'variant'),
           })),
         })),
+        categories: product.categories
+          .filter(pc => pc.category && pc.category.deletedAt === null)
+          .map(pc => pc.category),
       },
     });
   } catch (error: any) {
@@ -849,7 +975,7 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const { description, visible, sortOrder } = req.body;
+    const { description, visible, sortOrder, categoryIds } = req.body;
 
     // Normalize visible to boolean (handle both string and boolean)
     let visibleValue: boolean | undefined = undefined;
@@ -933,6 +1059,42 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
         }
       }
 
+      // Handle category assignments if provided
+      if (categoryIds !== undefined) {
+        const categoryIdsArray = Array.isArray(categoryIds) ? categoryIds : [];
+        
+        if (categoryIdsArray.length > 0) {
+          // Verify all categories belong to tenant and are active
+          const categories = await tx.category.findMany({
+            where: {
+              id: { in: categoryIdsArray },
+              tenantId: tenant,
+              deletedAt: null, // Only active categories
+            },
+          });
+
+          if (categories.length !== categoryIdsArray.length) {
+            throw new Error('Some categories not found or belong to different tenant');
+          }
+        }
+
+        // Remove all existing category associations
+        await tx.productCategory.deleteMany({
+          where: { productId: product.id },
+        });
+
+        // Create new category associations
+        if (categoryIdsArray.length > 0) {
+          await tx.productCategory.createMany({
+            data: categoryIdsArray.map((categoryId: string) => ({
+              productId: product.id,
+              categoryId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
       // Update product fields
       await tx.product.update({
         where: { id: product.id },
@@ -951,6 +1113,16 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
         images: {
           orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
         },
+        categories: {
+          where: {
+            category: {
+              deletedAt: null, // Only include active categories
+            },
+          },
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -961,6 +1133,9 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
           ...img,
           imageUrl: storage.getImageUrl(img.filename, 'product'),
         })),
+        categories: updatedProduct!.categories
+          .filter(pc => pc.category && pc.category.deletedAt === null)
+          .map(pc => pc.category),
       },
     });
   } catch (error: any) {

@@ -8,14 +8,14 @@
       </div>
       <div class="flex gap-2">
         <UiButton
-          @click="openSyncModal"
+          @click="navigateTo(`/admin/${route.params.tenant}/categories`)"
           variant="secondary"
           class="inline-flex items-center gap-2"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
-          Sync Products
+          Manage Categories
         </UiButton>
         <UiButton
           @click="openAddModal"
@@ -268,102 +268,6 @@
         </div>
     </UiDialog>
 
-    <!-- Sync Products Modal -->
-    <UiDialog :open="showSyncModal" @update:open="(value) => { if (!value) closeSyncModal() }" class="max-w-2xl max-h-[90vh]">
-      <UiDialogTitle class="sr-only">Sync Products</UiDialogTitle>
-      <div class="flex flex-col max-h-[90vh]">
-        <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-admin-text-primary">Sync Products</h2>
-          <UiDialogClose as-child>
-            <UiButton variant="ghost" size="icon" class="text-admin-text-muted hover:text-admin-text-secondary">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </UiButton>
-          </UiDialogClose>
-        </div>
-
-        <div class="p-6 flex-1 overflow-y-auto">
-          <p class="text-sm text-admin-text-secondary mb-4">
-            Select products to sync from Marianatek. This will update variants, add new ones, and mark deleted variants.
-          </p>
-
-          <!-- Product Selection -->
-          <div class="space-y-2 mb-4">
-            <div class="flex items-center gap-2 mb-2">
-              <UiCheckbox
-                :checked="allSelected"
-                @update:checked="(value) => { if (value && !allSelected) toggleAllProducts(); else if (!value && allSelected) toggleAllProducts() }"
-              />
-              <UiLabel class="text-sm font-medium">Select All</UiLabel>
-            </div>
-              <div
-                v-for="product in products"
-                :key="product.id"
-                class="flex items-center gap-3 p-3 border border-admin-border rounded-lg"
-              >
-                <!-- Image Thumbnail -->
-                <div class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-admin-surface-raised border border-admin-border flex items-center justify-center">
-                  <img
-                    v-if="getFeaturedImage(product)"
-                    :src="getFullImageUrl(getFeaturedImage(product)!.imageUrl)"
-                    :alt="`${product.mtProductName || 'Product'} image`"
-                    class="w-full h-full object-cover"
-                    @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
-                  />
-                  <svg
-                    v-else
-                    class="w-6 h-6 text-admin-text-muted"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                </div>
-                
-                <!-- Checkbox + Product Info -->
-                <div class="flex items-center gap-2 flex-1 min-w-0">
-                  <UiCheckbox
-                    :checked="selectedProducts.includes(product.id)"
-                    @update:checked="(value) => { if (value && !selectedProducts.includes(product.id)) toggleProduct(product.id); else if (!value && selectedProducts.includes(product.id)) toggleProduct(product.id) }"
-                    class="flex-shrink-0"
-                  />
-                  <UiLabel class="flex-1 text-sm cursor-pointer">
-                    {{ product.mtProductName || 'Product' }} ({{ product.mtProductId }}) ({{ product.variants?.length || 0 }} variants)
-                  </UiLabel>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sync Button -->
-            <UiButton
-              @click="performSync"
-              :disabled="syncing || selectedProducts.length === 0"
-              variant="default"
-              class="w-full"
-            >
-              <span v-if="syncing">Syncing...</span>
-              <span v-else>Sync Now ({{ selectedProducts.length }} product{{ selectedProducts.length !== 1 ? 's' : '' }})</span>
-            </UiButton>
-
-            <!-- Sync Results -->
-            <div v-if="syncResult" class="mt-4 p-4 bg-admin-surface-raised rounded-lg">
-              <h3 class="font-medium text-admin-text-primary mb-2">Sync Results</h3>
-              <div class="space-y-1 text-sm text-admin-text-secondary">
-                <p>Products synced: {{ syncResult.summary.synced }}</p>
-                <p>New variants: {{ syncResult.summary.newVariants }}</p>
-                <p>Updated variants: {{ syncResult.summary.updatedVariants }}</p>
-                <p>Deleted variants: {{ syncResult.summary.deletedVariants }}</p>
-                <p v-if="syncResult.summary.errors.length > 0" class="text-admin-state-danger-text mt-2">
-                  Errors: {{ syncResult.summary.errors.join(', ') }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-    </UiDialog>
-
     <!-- Delete Confirmation Modal -->
     <UiDialog :open="showDeleteModal" @update:open="(value) => { if (!value) closeDeleteModal() }" class="max-w-md">
       <div class="p-6">
@@ -418,7 +322,6 @@ const mtSubdomain = ref<string | null>(null)
 const refreshing = ref(false) // Track background refresh
 
 const showAddModal = ref(false)
-const showSyncModal = ref(false)
 const showDeleteModal = ref(false)
 const productToDelete = ref<any>(null)
 const deleting = ref(false)
@@ -429,9 +332,6 @@ const mtProducts = ref<any[]>([])
 const mtProductsTotal = ref(0)
 const mtProductsPage = ref(1)
 const mtProductsPageSize = ref(20)
-const selectedProducts = ref<string[]>([])
-const syncing = ref(false)
-const syncResult = ref<any>(null)
 
 // Fetch products with cache-first strategy
 async function fetchProducts() {
@@ -573,71 +473,6 @@ async function selectMTProduct(product: any) {
   }
 }
 
-// Sync Modal
-function openSyncModal() {
-  showSyncModal.value = true
-  selectedProducts.value = products.value.map(p => p.id)
-  syncResult.value = null
-}
-
-function closeSyncModal() {
-  showSyncModal.value = false
-  selectedProducts.value = []
-  syncResult.value = null
-}
-
-const allSelected = computed(() => {
-  return products.value.length > 0 && selectedProducts.value.length === products.value.length
-})
-
-function toggleAllProducts() {
-  if (allSelected.value) {
-    selectedProducts.value = []
-  } else {
-    selectedProducts.value = products.value.map(p => p.id)
-  }
-}
-
-function toggleProduct(productId: string) {
-  const index = selectedProducts.value.indexOf(productId)
-  if (index > -1) {
-    selectedProducts.value.splice(index, 1)
-  } else {
-    selectedProducts.value.push(productId)
-  }
-}
-
-async function performSync() {
-  try {
-    syncing.value = true
-    syncResult.value = null
-    const response = await $fetch<{ summary: any }>(`${backendUrl}/admin/${route.params.tenant}/products/sync`, {
-      method: 'POST',
-      credentials: 'include',
-      body: {
-        productIds: selectedProducts.value,
-      },
-    })
-    syncResult.value = response
-    // Invalidate cache and refresh products after sync
-    const tenantId = route.params.tenant as string
-    invalidate(`admin:products:${tenantId}`)
-    await fetchProducts()
-  } catch (err: any) {
-    console.error('Error syncing products:', err)
-    syncResult.value = {
-      summary: {
-        synced: 0,
-        newVariants: 0,
-        updatedVariants: 0,
-        deletedVariants: 0,
-        errors: [err.message || 'Failed to sync products'],
-      },
-    }
-  } finally {
-    syncing.value = false
-  }
-}
 
 function getFeaturedImage(product: any) {
   return product.images?.find((img: any) => img.isFeatured) || product.images?.[0]

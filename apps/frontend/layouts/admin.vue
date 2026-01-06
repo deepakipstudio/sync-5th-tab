@@ -67,8 +67,17 @@
             
             <!-- Tenant Info Header -->
             <div class="px-4 py-3">
+              <div v-if="brandLogoUrl" class="mb-2 flex items-center justify-center">
+                <img
+                  :src="brandLogoUrl"
+                  alt="Brand Logo"
+                  class="h-8 w-auto object-contain"
+                  @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                />
+              </div>
               <div class="text-sm font-medium text-admin-text-primary">
-                <span v-if="loadingTenant">Loading...</span>
+                <span v-if="loadingTenant || loadingBrand">Loading...</span>
+                <span v-else-if="tenantId && brandName">{{ brandName }}</span>
                 <span v-else-if="tenantId && tenantName">{{ tenantName }}</span>
                 <span v-else-if="tenantId" class="font-mono">{{ tenantId }}</span>
                 <span v-else>No tenant selected</span>
@@ -124,8 +133,17 @@
         
         <!-- Tenant Info Header -->
         <div class="px-4 py-3">
+          <div v-if="brandLogoUrl" class="mb-2 flex items-center justify-center">
+            <img
+              :src="brandLogoUrl"
+              alt="Brand Logo"
+              class="h-8 w-auto object-contain"
+              @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+            />
+          </div>
           <div class="text-sm font-medium text-admin-text-primary">
-            <span v-if="loadingTenant">Loading...</span>
+            <span v-if="loadingTenant || loadingBrand">Loading...</span>
+            <span v-else-if="tenantId && brandName">{{ brandName }}</span>
             <span v-else-if="tenantId && tenantName">{{ tenantName }}</span>
             <span v-else-if="tenantId" class="font-mono">{{ tenantId }}</span>
             <span v-else>No tenant selected</span>
@@ -274,6 +292,7 @@ const config = useRuntimeConfig()
 const tenantId = computed(() => route.params.tenant as string | undefined)
 const { fetchWithCache } = useAdminCache()
 const { clearAuth } = useAuth()
+const { fetchBrand } = useTenantBrand()
 
 // Mobile menu state
 const mobileMenuOpen = ref(false)
@@ -286,6 +305,11 @@ const mobileUserDropdownOpen = ref(false)
 const tenantName = ref('')
 const tenantSubdomain = ref('')
 const loadingTenant = ref(false)
+
+// Brand data state
+const brandName = ref('')
+const brandLogoUrl = ref('')
+const loadingBrand = ref(false)
 
 // Fetch tenant name with caching
 async function fetchTenantName() {
@@ -421,9 +445,55 @@ async function logout() {
   }
 }
 
+// Fetch brand data with caching
+async function fetchBrandData() {
+  if (!tenantId.value) {
+    brandName.value = ''
+    brandLogoUrl.value = ''
+    return
+  }
+
+  const cacheKey = `admin:tenant-brand:${tenantId.value}`
+  const ttl = 30 * 60 * 1000 // 30 minutes
+
+  // Try to get from cache first
+  const cached = useAdminCache().getCached<{
+    id: string
+    brandName: string | null
+    logoLightUrl: string | null
+  }>(cacheKey)
+  
+  if (cached) {
+    brandName.value = cached.brandName || ''
+    brandLogoUrl.value = cached.logoLightUrl || ''
+    loadingBrand.value = false
+  }
+
+  // Fetch with cache-first strategy
+  try {
+    const brand = await fetchBrand(tenantId.value)
+    if (brand) {
+      brandName.value = brand.brandName || ''
+      brandLogoUrl.value = brand.logoLightUrl || ''
+    } else {
+      brandName.value = ''
+      brandLogoUrl.value = ''
+    }
+  } catch (e) {
+    // Silently fail - brand data is optional
+    if (!cached) {
+      brandName.value = ''
+      brandLogoUrl.value = ''
+    }
+  } finally {
+    loadingBrand.value = false
+  }
+}
+
 // Watch for tenant changes
 watch(tenantId, () => {
   fetchTenantName()
+  fetchBrandData()
 }, { immediate: true })
 
 // Close mobile menu on route change

@@ -72,88 +72,145 @@
     <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h2 class="text-lg font-semibold text-admin-text-primary">Brand Settings</h2>
-          <p class="text-sm text-admin-text-secondary mt-1">Customize your store's primary and secondary brand colors</p>
+          <h2 class="text-lg font-semibold text-admin-text-primary">
+            {{ brandData?.brandName || 'Brand Settings' }}
+          </h2>
+          <p class="text-sm text-admin-text-secondary mt-1">Brand information synced from Marianatek</p>
+        </div>
+        <UiButton
+          @click="handleSyncBrand"
+          :disabled="syncingBrand"
+          variant="secondary"
+          class="inline-flex items-center gap-2"
+        >
+          <svg 
+            v-if="!syncingBrand"
+            class="w-4 h-4" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span v-else class="animate-spin">⟳</span>
+          {{ syncingBrand ? 'Syncing...' : 'Sync from Marianatek' }}
+        </UiButton>
+      </div>
+
+      <!-- Logo Preview -->
+      <div v-if="brandData?.logoLightUrl" class="mb-4">
+        <UiLabel class="block mb-2">Logo</UiLabel>
+        <div class="flex items-center gap-4">
+          <img
+            :src="brandData.logoLightUrl"
+            alt="Brand Logo"
+            class="h-16 w-auto object-contain rounded border border-admin-border p-2 bg-admin-surface-raised"
+            @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+          />
+          <div v-if="brandData.logoDarkUrl" class="flex items-center gap-2">
+            <span class="text-sm text-admin-text-secondary">Dark:</span>
+            <img
+              :src="brandData.logoDarkUrl"
+              alt="Brand Logo Dark"
+              class="h-16 w-auto object-contain rounded border border-admin-border p-2 bg-admin-surface-raised"
+              @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+            />
+          </div>
         </div>
       </div>
 
       <div class="space-y-4">
-        <!-- Primary Color -->
+        <!-- Brand Colors - Read-only display -->
         <div>
-          <UiLabel class="block mb-2">
-            Primary Brand Color
+          <UiLabel class="block mb-3 text-sm font-medium text-admin-text-primary">
+            Brand Colors
           </UiLabel>
-          <div class="flex items-center gap-3">
-            <input
-              v-model="brandForm.primaryBrandColor"
-              type="color"
-              class="w-16 h-10 rounded border border-admin-border cursor-pointer"
-            />
-            <UiInput
-              v-model="brandForm.primaryBrandColor"
-              type="text"
-              placeholder="#8e213e"
-              pattern="^#[0-9A-Fa-f]{6}$"
-              class="flex-1 font-mono text-sm"
-            />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Primary Brand Color -->
+            <div class="bg-admin-surface-raised rounded-lg border border-admin-border p-4">
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  :style="{ backgroundColor: brandData?.primaryColor || '#8e213e' }"
+                  class="w-12 h-12 rounded border-2 border-admin-border flex-shrink-0"
+                />
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-admin-text-primary">Primary Brand Color</p>
+                  <p class="text-xs font-mono text-admin-text-secondary">
+                    {{ brandData?.primaryColor || 'Not set' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Primary Foreground Color -->
+            <div class="bg-admin-surface-raised rounded-lg border border-admin-border p-4">
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  :style="{ backgroundColor: brandData?.primaryForegroundColor || '#ffffff' }"
+                  class="w-12 h-12 rounded border-2 border-admin-border flex-shrink-0"
+                />
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-admin-text-primary">Primary Foreground Color</p>
+                  <p class="text-xs font-mono text-admin-text-secondary">
+                    {{ brandData?.primaryForegroundColor || 'Not set' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Secondary Brand Color -->
+            <div class="bg-admin-surface-raised rounded-lg border border-admin-border p-4">
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  :style="{ backgroundColor: brandData?.secondaryColor || '#a83d5a' }"
+                  class="w-12 h-12 rounded border-2 border-admin-border flex-shrink-0"
+                />
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-admin-text-primary">Secondary Brand Color</p>
+                  <p class="text-xs font-mono text-admin-text-secondary">
+                    {{ brandData?.secondaryColor || 'Not set' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Secondary Foreground Color -->
+            <div class="bg-admin-surface-raised rounded-lg border border-admin-border p-4">
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  :style="{ backgroundColor: brandData?.secondaryForegroundColor || '#ffffff' }"
+                  class="w-12 h-12 rounded border-2 border-admin-border flex-shrink-0"
+                />
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-admin-text-primary">Secondary Foreground Color</p>
+                  <p class="text-xs font-mono text-admin-text-secondary">
+                    {{ brandData?.secondaryForegroundColor || 'Not set' }}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Secondary Color -->
+    <!-- Product Management Section -->
+    <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+      <div class="flex items-center justify-between mb-4">
         <div>
-          <UiLabel class="block mb-2">
-            Secondary Brand Color
-          </UiLabel>
-          <div class="flex items-center gap-3">
-            <input
-              v-model="brandForm.secondaryBrandColor"
-              type="color"
-              class="w-16 h-10 rounded border border-admin-border cursor-pointer"
-            />
-            <UiInput
-              v-model="brandForm.secondaryBrandColor"
-              type="text"
-              placeholder="#a83d5a"
-              pattern="^#[0-9A-Fa-f]{6}$"
-              class="flex-1 font-mono text-sm"
-            />
-          </div>
+          <h2 class="text-lg font-semibold text-admin-text-primary">Product Management</h2>
+          <p class="text-sm text-admin-text-secondary mt-1">Sync products from Marianatek to your store</p>
         </div>
-
-        <!-- Color Preview -->
-        <div class="mt-4 p-4 bg-admin-surface-raised rounded-lg border border-admin-border">
-          <p class="text-sm font-medium text-admin-text-primary mb-2">Preview</p>
-          <div class="flex gap-2">
-            <div
-              :style="{ backgroundColor: brandForm.primaryBrandColor || '#8e213e' }"
-              class="flex-1 h-16 rounded flex items-center justify-center text-white text-sm font-medium"
-            >
-              Primary
-            </div>
-            <div
-              :style="{ backgroundColor: brandForm.secondaryBrandColor || '#a83d5a' }"
-              class="flex-1 h-16 rounded flex items-center justify-center text-white text-sm font-medium"
-            >
-              Secondary
-            </div>
-          </div>
-        </div>
-
-        <!-- Brand Settings Error -->
-        <UiAlert v-if="brandError" variant="error" class="text-sm">
-          {{ brandError }}
-        </UiAlert>
-
-        <!-- Save Brand Settings Button -->
-        <div class="flex justify-end pt-2">
-          <UiButton
-            @click="saveBrandSettings"
-            :disabled="savingBrand"
-            variant="default"
-          >
-            {{ savingBrand ? 'Saving...' : 'Save Brand Settings' }}
-          </UiButton>
-        </div>
+        <UiButton
+          @click="openSyncModal"
+          variant="secondary"
+          class="inline-flex items-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Sync Products
+        </UiButton>
       </div>
     </div>
 
@@ -240,8 +297,8 @@
           <!-- Details -->
           <div class="p-4">
             <div class="text-sm text-admin-text-secondary space-y-1 mb-3">
-              <p v-if="banner.collectionId">
-                <span class="text-admin-text-muted">Collection:</span> {{ banner.collectionId }}
+              <p v-if="banner.category">
+                <span class="text-admin-text-muted">Category:</span> {{ banner.category.name }}
               </p>
               <p v-if="banner.productClass">
                 <span class="text-admin-text-muted">Product Class:</span> {{ banner.productClass }}
@@ -358,16 +415,25 @@
               </div>
             </div>
 
-            <!-- Collection ID -->
+            <!-- Category -->
             <div>
               <UiLabel class="block mb-1">
-                Collection ID
+                Category
               </UiLabel>
-              <UiInput
-                v-model.number="form.collectionId"
-                type="number"
-                placeholder="Optional - Link to a product collection"
-              />
+              <select
+                v-model="form.categoryId"
+                class="flex h-10 w-full rounded-lg border border-admin-border bg-admin-surface-base px-3 py-2 text-sm text-admin-text-primary placeholder:text-admin-text-muted focus:outline-none focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option :value="null">None</option>
+                <option
+                  v-for="category in availableCategories"
+                  :key="category.id"
+                  :value="category.id"
+                >
+                  {{ category.name }}
+                </option>
+              </select>
+              <p class="text-xs text-admin-text-secondary mt-1">Optional - Link to a category</p>
             </div>
 
             <!-- Product Class -->
@@ -475,6 +541,102 @@
       </div>
     </UiDialog>
 
+    <!-- Sync Products Modal -->
+    <UiDialog :open="showSyncModal" @update:open="(value) => { if (!value) closeSyncModal() }" class="max-w-2xl max-h-[90vh]">
+      <UiDialogTitle class="sr-only">Sync Products</UiDialogTitle>
+      <div class="flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-admin-text-primary">Sync Products</h2>
+          <UiDialogClose as-child>
+            <UiButton variant="ghost" size="icon" class="text-admin-text-muted hover:text-admin-text-secondary">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </UiButton>
+          </UiDialogClose>
+        </div>
+
+        <div class="p-6 flex-1 overflow-y-auto">
+          <p class="text-sm text-admin-text-secondary mb-4">
+            Select products to sync from Marianatek. This will update variants, add new ones, and mark deleted variants.
+          </p>
+
+          <!-- Product Selection -->
+          <div class="space-y-2 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <UiCheckbox
+                :checked="allSelected"
+                @update:checked="(value) => { if (value && !allSelected) toggleAllProducts(); else if (!value && allSelected) toggleAllProducts() }"
+              />
+              <UiLabel class="text-sm font-medium">Select All</UiLabel>
+            </div>
+            <div
+              v-for="product in syncProducts"
+              :key="product.id"
+              class="flex items-center gap-3 p-3 border border-admin-border rounded-lg"
+            >
+              <!-- Image Thumbnail -->
+              <div class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-admin-surface-raised border border-admin-border flex items-center justify-center">
+                <img
+                  v-if="getFeaturedImage(product)"
+                  :src="getFullImageUrl(getFeaturedImage(product)!.imageUrl)"
+                  :alt="`${product.mtProductName || 'Product'} image`"
+                  class="w-full h-full object-cover"
+                  @error="(e: Event) => (e.target as HTMLImageElement).style.display = 'none'"
+                />
+                <svg
+                  v-else
+                  class="w-6 h-6 text-admin-text-muted"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              
+              <!-- Checkbox + Product Info -->
+              <div class="flex items-center gap-2 flex-1 min-w-0">
+                <UiCheckbox
+                  :checked="selectedProducts.includes(product.id)"
+                  @update:checked="(value) => { if (value && !selectedProducts.includes(product.id)) toggleProduct(product.id); else if (!value && selectedProducts.includes(product.id)) toggleProduct(product.id) }"
+                  class="flex-shrink-0"
+                />
+                <UiLabel class="flex-1 text-sm cursor-pointer">
+                  {{ product.mtProductName || 'Product' }} ({{ product.mtProductId }}) ({{ product.variants?.length || 0 }} variants)
+                </UiLabel>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sync Button -->
+          <UiButton
+            @click="performSync"
+            :disabled="syncing || selectedProducts.length === 0"
+            variant="default"
+            class="w-full"
+          >
+            <span v-if="syncing">Syncing...</span>
+            <span v-else>Sync Now ({{ selectedProducts.length }} product{{ selectedProducts.length !== 1 ? 's' : '' }})</span>
+          </UiButton>
+
+          <!-- Sync Results -->
+          <div v-if="syncResult" class="mt-4 p-4 bg-admin-surface-raised rounded-lg">
+            <h3 class="font-medium text-admin-text-primary mb-2">Sync Results</h3>
+            <div class="space-y-1 text-sm text-admin-text-secondary">
+              <p>Products synced: {{ syncResult.summary.synced }}</p>
+              <p>New variants: {{ syncResult.summary.newVariants }}</p>
+              <p>Updated variants: {{ syncResult.summary.updatedVariants }}</p>
+              <p>Deleted variants: {{ syncResult.summary.deletedVariants }}</p>
+              <p v-if="syncResult.summary.errors.length > 0" class="text-admin-state-danger-text mt-2">
+                Errors: {{ syncResult.summary.errors.join(', ') }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </UiDialog>
+
   </div>
 </template>
 
@@ -484,13 +646,15 @@ import { toast } from 'vue-sonner'
 definePageMeta({ layout: 'admin' })
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const { fetchBrand, syncBrand } = useTenantBrand()
 
 interface Banner {
   id: string
   imageUrl: string
   filename?: string
   originalName?: string
-  collectionId: number | null
+  categoryId: string | null
+  category?: { id: string; name: string } | null
   productClass: string | null
   expiresAt: string | null
   sortOrder: number | null
@@ -505,11 +669,22 @@ const { fetchWithCache, invalidate } = useAdminCache()
 const tenantId = computed(() => route.params.tenant as string)
 
 // Brand Settings State
+const brandData = ref<{
+  id: string
+  brandName: string | null
+  primaryColor: string | null
+  primaryForegroundColor: string | null
+  secondaryColor: string | null
+  secondaryForegroundColor: string | null
+  logoLightUrl: string | null
+  logoDarkUrl: string | null
+} | null>(null)
 const brandForm = ref({
   primaryBrandColor: '#8e213e',
   secondaryBrandColor: '#a83d5a',
 })
 const savingBrand = ref(false)
+const syncingBrand = ref(false)
 const brandError = ref('')
 
 // Banners State
@@ -531,12 +706,24 @@ const isDragging = ref(false)
 
 // Form state
 const form = ref({
-  collectionId: null as number | null,
+  categoryId: null as string | null,
   productClass: '',
   expiresAt: '',
   sortOrder: null as number | null,
   visible: true,
 })
+
+// Category management
+const { fetchCategories } = useCategory()
+const availableCategories = ref<any[]>([])
+const loadingCategories = ref(false)
+
+// Product sync state
+const showSyncModal = ref(false)
+const syncProducts = ref<any[]>([])
+const selectedProducts = ref<string[]>([])
+const syncing = ref(false)
+const syncResult = ref<any>(null)
 
 // Delete state
 const showDeleteModal = ref(false)
@@ -549,6 +736,40 @@ const deleting = ref(false)
 function getFullImageUrl(imageUrl: string): string {
   if (imageUrl.startsWith('http')) return imageUrl
   return `${config.public.backendUrl}${imageUrl}`
+}
+
+// Fetch brand data
+async function fetchBrandData() {
+  try {
+    const brand = await fetchBrand(tenantId.value)
+    if (brand) {
+      brandData.value = brand
+    } else {
+      brandData.value = null
+    }
+  } catch (e: any) {
+    console.error('Error fetching brand data:', e)
+    brandData.value = null
+  }
+}
+
+// Sync brand from Marianatek
+async function handleSyncBrand() {
+  syncingBrand.value = true
+  brandError.value = ''
+
+  try {
+    const brand = await syncBrand(tenantId.value)
+    if (brand) {
+      brandData.value = brand
+      showToast('success', 'Brand data synced successfully from Marianatek')
+    }
+  } catch (e: any) {
+    brandError.value = e.data?.error || e.message || 'Failed to sync brand data'
+    showToast('error', brandError.value)
+  } finally {
+    syncingBrand.value = false
+  }
 }
 
 // Fetch store settings (brand colors and banners) with cache-first strategy
@@ -755,7 +976,7 @@ function formatFileSize(bytes: number): string {
 function openCreateModal() {
   editingBanner.value = null
   form.value = {
-    collectionId: null,
+    categoryId: null,
     productClass: '',
     expiresAt: '',
     sortOrder: null,
@@ -765,12 +986,13 @@ function openCreateModal() {
   imagePreview.value = null
   formError.value = ''
   showModal.value = true
+  loadCategories()
 }
 
 function openEditModal(banner: Banner) {
   editingBanner.value = banner
   form.value = {
-    collectionId: banner.collectionId,
+    categoryId: banner.categoryId,
     productClass: banner.productClass || '',
     expiresAt: banner.expiresAt ? formatDateTimeLocal(banner.expiresAt) : '',
     sortOrder: banner.sortOrder,
@@ -780,6 +1002,7 @@ function openEditModal(banner: Banner) {
   imagePreview.value = getFullImageUrl(banner.imageUrl)
   formError.value = ''
   showModal.value = true
+  loadCategories()
 }
 
 function closeModal() {
@@ -805,8 +1028,8 @@ async function saveBanner() {
       formData.append('image', selectedFile.value)
     }
     
-    if (form.value.collectionId !== null) {
-      formData.append('collectionId', String(form.value.collectionId))
+    if (form.value.categoryId) {
+      formData.append('categoryId', form.value.categoryId)
     }
     if (form.value.productClass) {
       formData.append('productClass', form.value.productClass)
@@ -912,7 +1135,103 @@ function formatDateTimeLocal(dateStr: string): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
+// Load categories for dropdown
+async function loadCategories() {
+  loadingCategories.value = true
+  try {
+    availableCategories.value = await fetchCategories(tenantId.value)
+  } catch (err: any) {
+    console.error('Error loading categories:', err)
+    availableCategories.value = []
+  } finally {
+    loadingCategories.value = false
+  }
+}
+
+// Product sync functions
+async function openSyncModal() {
+  showSyncModal.value = true
+  selectedProducts.value = []
+  syncResult.value = null
+  
+  // Load products for sync
+  try {
+    const response = await $fetch<{ products: any[] }>(`${config.public.backendUrl}/admin/${tenantId.value}/products`, {
+      credentials: 'include',
+    })
+    syncProducts.value = response.products || []
+    selectedProducts.value = syncProducts.value.map(p => p.id)
+  } catch (err: any) {
+    console.error('Error loading products for sync:', err)
+    syncProducts.value = []
+  }
+}
+
+function closeSyncModal() {
+  showSyncModal.value = false
+  selectedProducts.value = []
+  syncResult.value = null
+}
+
+const allSelected = computed(() => {
+  return syncProducts.value.length > 0 && selectedProducts.value.length === syncProducts.value.length
+})
+
+function toggleAllProducts() {
+  if (allSelected.value) {
+    selectedProducts.value = []
+  } else {
+    selectedProducts.value = syncProducts.value.map(p => p.id)
+  }
+}
+
+function toggleProduct(productId: string) {
+  const index = selectedProducts.value.indexOf(productId)
+  if (index > -1) {
+    selectedProducts.value.splice(index, 1)
+  } else {
+    selectedProducts.value.push(productId)
+  }
+}
+
+async function performSync() {
+  try {
+    syncing.value = true
+    syncResult.value = null
+    const response = await $fetch<{ summary: any }>(`${config.public.backendUrl}/admin/${tenantId.value}/products/sync`, {
+      method: 'POST',
+      credentials: 'include',
+      body: {
+        productIds: selectedProducts.value,
+      },
+    })
+    syncResult.value = response
+    // Invalidate cache after sync
+    invalidate(`admin:products:${tenantId.value}`)
+    showToast('success', 'Products synced successfully')
+  } catch (err: any) {
+    console.error('Error syncing products:', err)
+    syncResult.value = {
+      summary: {
+        synced: 0,
+        newVariants: 0,
+        updatedVariants: 0,
+        deletedVariants: 0,
+        errors: [err.message || 'Failed to sync products'],
+      },
+    }
+    showToast('error', err.message || 'Failed to sync products')
+  } finally {
+    syncing.value = false
+  }
+}
+
+function getFeaturedImage(product: any) {
+  return product.images?.find((img: any) => img.isFeatured) || product.images?.[0]
+}
+
 onMounted(() => {
+  fetchBrandData()
   fetchStoreSettings()
   
   // Handle hash scrolling (e.g., #banners)
