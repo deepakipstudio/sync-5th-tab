@@ -53,11 +53,14 @@ import {
   postCategoryProducts,
   deleteCategoryProduct,
   putCategoriesReorder,
+  checkSlugAvailability,
+  generateUniqueSlugFromName,
 } from './routes/categories';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+// Note: express.urlencoded removed - multer handles multipart/form-data parsing including text fields
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // Serve uploaded files statically
@@ -97,6 +100,8 @@ app.delete('/admin/:tenant/banners/:id', deleteTenantBanner);
 
 // Category routes
 app.get('/admin/:tenant/categories', getTenantCategories);
+app.get('/admin/:tenant/categories/check-slug', checkSlugAvailability);
+app.get('/admin/:tenant/categories/generate-slug', generateUniqueSlugFromName);
 app.get('/admin/:tenant/categories/:id', getTenantCategory);
 app.post('/admin/:tenant/categories', uploadCategoryImage, handleMulterError, postTenantCategory);
 app.put('/admin/:tenant/categories/:id', uploadCategoryImage, handleMulterError, putTenantCategory);

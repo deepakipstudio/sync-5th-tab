@@ -682,7 +682,13 @@ export async function putTenantProduct(req: Request, res: Response) {
         });
       }
 
-      // Add new images
+      // Always clear all featured flags first to ensure only one image is featured
+      await tx.productImage.updateMany({
+        where: { productId: id },
+        data: { isFeatured: false },
+      });
+
+      // Add new images (initially all set to isFeatured: false)
       if (imageFiles.length > 0) {
         const existingImages = await tx.productImage.findMany({
           where: { productId: id },
@@ -701,7 +707,7 @@ export async function putTenantProduct(req: Request, res: Response) {
               originalName: file.originalname,
               mimeType: file.mimetype,
               size: file.size,
-              isFeatured: index === featuredIndex || (featuredIndex === -1 && index === 0),
+              isFeatured: false, // Will be set below if this is the featured image
               sortOrder: maxSortOrder + 1 + index,
             },
           });
@@ -710,17 +716,37 @@ export async function putTenantProduct(req: Request, res: Response) {
         await Promise.all(imagePromises);
       }
 
-      // Update featured image if specified
-      if (featuredIndex >= 0 && imageFiles.length === 0) {
-        // User is just changing featured flag on existing images
-        const featuredImageId = req.body.featuredImageId;
-        if (featuredImageId) {
-          await tx.productImage.updateMany({
-            where: { productId: id },
-            data: { isFeatured: false },
-          });
+      // Set the correct featured image
+      const featuredImageId = req.body.featuredImageId;
+      if (featuredImageId) {
+        // User selected an existing image as featured
+        await tx.productImage.update({
+          where: { id: featuredImageId },
+          data: { isFeatured: true },
+        });
+      } else if (featuredIndex >= 0 && imageFiles.length > 0) {
+        // User selected a new image as featured by index
+        const newImages = await tx.productImage.findMany({
+          where: { productId: id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[featuredIndex]) {
           await tx.productImage.update({
-            where: { id: featuredImageId },
+            where: { id: newImages[featuredIndex].id },
+            data: { isFeatured: true },
+          });
+        }
+      } else if (imageFiles.length > 0 && featuredIndex === -1) {
+        // Default: first new image if no selection
+        const newImages = await tx.productImage.findMany({
+          where: { productId: id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[0]) {
+          await tx.productImage.update({
+            where: { id: newImages[0].id },
             data: { isFeatured: true },
           });
         }
@@ -975,7 +1001,17 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const { description, visible, sortOrder, categoryIds } = req.body;
+    const { description, visible, sortOrder } = req.body;
+
+    // Handle categoryIds parsing from FormData (may be categoryIds[] or categoryIds)
+    let categoryIds: string[] | undefined = undefined;
+    if (req.body.categoryIds !== undefined) {
+      // Handle array or single value
+      categoryIds = Array.isArray(req.body.categoryIds) ? req.body.categoryIds : [req.body.categoryIds];
+    } else if (req.body['categoryIds[]'] !== undefined) {
+      // Handle bracket notation from FormData
+      categoryIds = Array.isArray(req.body['categoryIds[]']) ? req.body['categoryIds[]'] : [req.body['categoryIds[]']];
+    }
 
     // Normalize visible to boolean (handle both string and boolean)
     let visibleValue: boolean | undefined = undefined;
@@ -1015,7 +1051,13 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
         });
       }
 
-      // Add new images
+      // Always clear all featured flags first to ensure only one image is featured
+      await tx.productImage.updateMany({
+        where: { productId: product.id },
+        data: { isFeatured: false },
+      });
+
+      // Add new images (initially all set to isFeatured: false)
       if (imageFiles.length > 0) {
         const existingImages = await tx.productImage.findMany({
           where: { productId: product.id },
@@ -1034,7 +1076,7 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
               originalName: file.originalname,
               mimeType: file.mimetype,
               size: file.size,
-              isFeatured: index === featuredIndex || (featuredIndex === -1 && index === 0),
+              isFeatured: false, // Will be set below if this is the featured image
               sortOrder: maxSortOrder + 1 + index,
             },
           });
@@ -1043,17 +1085,37 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
         await Promise.all(imagePromises);
       }
 
-      // Update featured image if specified
-      if (featuredIndex >= 0 && imageFiles.length === 0) {
-        // User is just changing featured flag on existing images
-        const featuredImageId = req.body.featuredImageId;
-        if (featuredImageId) {
-          await tx.productImage.updateMany({
-            where: { productId: product.id },
-            data: { isFeatured: false },
-          });
+      // Set the correct featured image
+      const featuredImageId = req.body.featuredImageId;
+      if (featuredImageId) {
+        // User selected an existing image as featured
+        await tx.productImage.update({
+          where: { id: featuredImageId },
+          data: { isFeatured: true },
+        });
+      } else if (featuredIndex >= 0 && imageFiles.length > 0) {
+        // User selected a new image as featured by index
+        const newImages = await tx.productImage.findMany({
+          where: { productId: product.id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[featuredIndex]) {
           await tx.productImage.update({
-            where: { id: featuredImageId },
+            where: { id: newImages[featuredIndex].id },
+            data: { isFeatured: true },
+          });
+        }
+      } else if (imageFiles.length > 0 && featuredIndex === -1) {
+        // Default: first new image if no selection
+        const newImages = await tx.productImage.findMany({
+          where: { productId: product.id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[0]) {
+          await tx.productImage.update({
+            where: { id: newImages[0].id },
             data: { isFeatured: true },
           });
         }
@@ -1061,7 +1123,10 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
 
       // Handle category assignments if provided
       if (categoryIds !== undefined) {
-        const categoryIdsArray = Array.isArray(categoryIds) ? categoryIds : [];
+        // Filter out empty strings and invalid values
+        const categoryIdsArray = categoryIds
+          .filter((id: any) => id && typeof id === 'string' && id.trim() !== '')
+          .map((id: string) => id.trim());
         
         if (categoryIdsArray.length > 0) {
           // Verify all categories belong to tenant and are active
@@ -1083,7 +1148,7 @@ export async function putTenantProductByMtId(req: Request, res: Response) {
           where: { productId: product.id },
         });
 
-        // Create new category associations
+        // Create new category associations (even if empty array - clears categories)
         if (categoryIdsArray.length > 0) {
           await tx.productCategory.createMany({
             data: categoryIdsArray.map((categoryId: string) => ({
@@ -1486,7 +1551,13 @@ export async function putProductVariant(req: Request, res: Response) {
         });
       }
 
-      // Add new images
+      // Always clear all featured flags first to ensure only one image is featured
+      await tx.productImage.updateMany({
+        where: { variantId: id },
+        data: { isFeatured: false },
+      });
+
+      // Add new images (initially all set to isFeatured: false)
       if (imageFiles.length > 0) {
         const existingImages = await tx.productImage.findMany({
           where: { variantId: id },
@@ -1505,7 +1576,7 @@ export async function putProductVariant(req: Request, res: Response) {
               originalName: file.originalname,
               mimeType: file.mimetype,
               size: file.size,
-              isFeatured: index === featuredIndex || (featuredIndex === -1 && index === 0),
+              isFeatured: false, // Will be set below if this is the featured image
               sortOrder: maxSortOrder + 1 + index,
             },
           });
@@ -1514,16 +1585,37 @@ export async function putProductVariant(req: Request, res: Response) {
         await Promise.all(imagePromises);
       }
 
-      // Update featured image if specified
-      if (featuredIndex >= 0 && imageFiles.length === 0) {
-        const featuredImageId = req.body.featuredImageId;
-        if (featuredImageId) {
-          await tx.productImage.updateMany({
-            where: { variantId: id },
-            data: { isFeatured: false },
-          });
+      // Set the correct featured image
+      const featuredImageId = req.body.featuredImageId;
+      if (featuredImageId) {
+        // User selected an existing image as featured
+        await tx.productImage.update({
+          where: { id: featuredImageId },
+          data: { isFeatured: true },
+        });
+      } else if (featuredIndex >= 0 && imageFiles.length > 0) {
+        // User selected a new image as featured by index
+        const newImages = await tx.productImage.findMany({
+          where: { variantId: id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[featuredIndex]) {
           await tx.productImage.update({
-            where: { id: featuredImageId },
+            where: { id: newImages[featuredIndex].id },
+            data: { isFeatured: true },
+          });
+        }
+      } else if (imageFiles.length > 0 && featuredIndex === -1) {
+        // Default: first new image if no selection
+        const newImages = await tx.productImage.findMany({
+          where: { variantId: id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[0]) {
+          await tx.productImage.update({
+            where: { id: newImages[0].id },
             data: { isFeatured: true },
           });
         }
@@ -1688,7 +1780,13 @@ export async function putProductVariantByMtId(req: Request, res: Response) {
         });
       }
 
-      // Add new images
+      // Always clear all featured flags first to ensure only one image is featured
+      await tx.productImage.updateMany({
+        where: { variantId: variant.id },
+        data: { isFeatured: false },
+      });
+
+      // Add new images (initially all set to isFeatured: false)
       if (imageFiles.length > 0) {
         const existingImages = await tx.productImage.findMany({
           where: { variantId: variant.id },
@@ -1707,7 +1805,7 @@ export async function putProductVariantByMtId(req: Request, res: Response) {
               originalName: file.originalname,
               mimeType: file.mimetype,
               size: file.size,
-              isFeatured: index === featuredIndex || (featuredIndex === -1 && index === 0),
+              isFeatured: false, // Will be set below if this is the featured image
               sortOrder: maxSortOrder + 1 + index,
             },
           });
@@ -1716,16 +1814,37 @@ export async function putProductVariantByMtId(req: Request, res: Response) {
         await Promise.all(imagePromises);
       }
 
-      // Update featured image if specified
-      if (featuredIndex >= 0 && imageFiles.length === 0) {
-        const featuredImageId = req.body.featuredImageId;
-        if (featuredImageId) {
-          await tx.productImage.updateMany({
-            where: { variantId: variant.id },
-            data: { isFeatured: false },
-          });
+      // Set the correct featured image
+      const featuredImageId = req.body.featuredImageId;
+      if (featuredImageId) {
+        // User selected an existing image as featured
+        await tx.productImage.update({
+          where: { id: featuredImageId },
+          data: { isFeatured: true },
+        });
+      } else if (featuredIndex >= 0 && imageFiles.length > 0) {
+        // User selected a new image as featured by index
+        const newImages = await tx.productImage.findMany({
+          where: { variantId: variant.id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[featuredIndex]) {
           await tx.productImage.update({
-            where: { id: featuredImageId },
+            where: { id: newImages[featuredIndex].id },
+            data: { isFeatured: true },
+          });
+        }
+      } else if (imageFiles.length > 0 && featuredIndex === -1) {
+        // Default: first new image if no selection
+        const newImages = await tx.productImage.findMany({
+          where: { variantId: variant.id },
+          orderBy: { sortOrder: 'desc' },
+          take: imageFiles.length,
+        });
+        if (newImages[0]) {
+          await tx.productImage.update({
+            where: { id: newImages[0].id },
             data: { isFeatured: true },
           });
         }

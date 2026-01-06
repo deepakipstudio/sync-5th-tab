@@ -783,15 +783,15 @@ async function saveProduct() {
     formData.append('description', form.value.description || '')
     formData.append('visible', String(form.value.visible))
 
-    // Add category IDs
+    // Add category IDs - only send if there are categories, don't send empty string
     if (selectedCategoryIds.value.length > 0) {
       selectedCategoryIds.value.forEach(categoryId => {
         formData.append('categoryIds[]', categoryId)
       })
-    } else {
-      // Send empty array to clear categories
-      formData.append('categoryIds[]', '')
     }
+    // If empty, don't send categoryIds[] at all - backend will handle undefined as "no change" or "clear"
+    // For explicit clearing, we could send: formData.append('categoryIds', JSON.stringify([]))
+    // But current approach: undefined = no change, empty array after filtering = clear
 
     // Add new images
     newImages.value.forEach((img, index) => {

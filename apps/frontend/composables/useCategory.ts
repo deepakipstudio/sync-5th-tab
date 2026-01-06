@@ -1,7 +1,5 @@
 import { useAdminCache } from './useAdminCache'
 
-const { fetchWithCache, invalidate, getCached } = useAdminCache()
-
 export interface Category {
   id: string
   name: string
@@ -32,6 +30,7 @@ export interface CategoryUpdateData {
 export function useCategory() {
   const config = useRuntimeConfig()
   const backendUrl = config.public.backendUrl
+  const { fetchWithCache, invalidate, getCached } = useAdminCache()
 
   async function fetchCategories(tenantId: string): Promise<Category[]> {
     const cacheKey = `admin:categories:${tenantId}`
@@ -81,27 +80,34 @@ export function useCategory() {
   ): Promise<{ category: Category; slugWasAutoModified: boolean }> {
     const formData = new FormData()
     formData.append('name', data.name)
-    if (data.description) {
-      formData.append('description', data.description)
-    }
+    
+    // Always append description, even if empty (backend expects it)
+    formData.append('description', data.description || '')
+    
     if (data.slug) {
       formData.append('slug', data.slug)
     }
+    
     if (data.sortOrder !== undefined) {
       formData.append('sortOrder', String(data.sortOrder))
     }
+    
     if (data.image) {
       formData.append('image', data.image)
     }
-
-    const response = await $fetch<{ category: Category; slugWasAutoModified: boolean }>(
-      `${backendUrl}/admin/${tenantId}/categories`,
-      {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
+    
+    // Use native fetch to ensure FormData is sent correctly
+    const response = await fetch(`${backendUrl}/admin/${tenantId}/categories`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    }).then(async (res) => {
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Unknown error' }))
+        throw error
       }
-    )
+      return res.json()
+    }) as Promise<{ category: Category; slugWasAutoModified: boolean }>
 
     // Invalidate categories cache
     invalidate(`admin:categories:${tenantId}`)
@@ -114,31 +120,60 @@ export function useCategory() {
     categoryId: string,
     data: CategoryUpdateData
   ): Promise<{ category: Category; slugWasAutoModified: boolean }> {
+    // Debug: Log what we receive
+    console.log('useCategory.updateCategory - Received data:', {
+      name: data.name,
+      description: data.description,
+      slug: data.slug,
+      sortOrder: data.sortOrder,
+      hasImage: !!data.image,
+      imageName: data.image?.name,
+    })
+
     const formData = new FormData()
-    if (data.name !== undefined) {
-      formData.append('name', data.name)
-    }
-    if (data.description !== undefined) {
-      formData.append('description', data.description || '')
-    }
+    
+    // Always send all fields to ensure backend can update them properly
+    // Send empty string if undefined to ensure field is present in FormData
+    formData.append('name', data.name ?? '')
+    formData.append('description', data.description ?? '')
+    
     if (data.slug !== undefined) {
       formData.append('slug', data.slug)
     }
+    
     if (data.sortOrder !== undefined) {
       formData.append('sortOrder', String(data.sortOrder))
     }
+    
     if (data.image) {
       formData.append('image', data.image)
+      console.log('useCategory.updateCategory - Appending image:', {
+        name: data.image.name,
+        size: data.image.size,
+        type: data.image.type,
+      })
+    } else {
+      console.log('useCategory.updateCategory - No image file provided')
     }
-
-    const response = await $fetch<{ category: Category; slugWasAutoModified: boolean }>(
-      `${backendUrl}/admin/${tenantId}/categories/${categoryId}`,
-      {
-        method: 'PUT',
-        credentials: 'include',
-        body: formData,
+    
+    // Debug: Log FormData contents
+    console.log('useCategory.updateCategory - FormData entries:', Array.from(formData.entries()).map(([key, value]) => ({
+      key,
+      value: value instanceof File ? { name: value.name, size: value.size, type: value.type } : String(value)
+    })))
+    
+    // Use native fetch to ensure FormData is sent correctly
+    const response = await fetch(`${backendUrl}/admin/${tenantId}/categories/${categoryId}`, {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData,
+    }).then(async (res) => {
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Unknown error' }))
+        throw error
       }
-    )
+      return res.json()
+    }) as Promise<{ category: Category; slugWasAutoModified: boolean }>
 
     // Invalidate caches
     invalidate(`admin:categories:${tenantId}`)
@@ -179,6 +214,46 @@ export function useCategory() {
     invalidate(`admin:category:${tenantId}:${categoryId}`)
   }
 
+  async function checkSlugAvailability(
+    tenantId: string,
+    slug: string,
+    excludeId?: string
+  ): Promise<{ available: boolean; suggestedSlug?: string }> {
+    const params = new URLSearchParams({ slug })
+    if (excludeId) {
+      params.append('excludeId', excludeId)
+    }
+
+    const response = await $fetch<{ available: boolean; suggestedSlug?: string }>(
+      `${backendUrl}/admin/${tenantId}/categories/check-slug?${params.toString()}`,
+      {
+        credentials: 'include',
+      }
+    )
+
+    return response
+  }
+
+  async function generateUniqueSlug(
+    tenantId: string,
+    name: string,
+    excludeId?: string
+  ): Promise<{ slug: string }> {
+    const params = new URLSearchParams({ name })
+    if (excludeId) {
+      params.append('excludeId', excludeId)
+    }
+
+    const response = await $fetch<{ slug: string }>(
+      `${backendUrl}/admin/${tenantId}/categories/generate-slug?${params.toString()}`,
+      {
+        credentials: 'include',
+      }
+    )
+
+    return response
+  }
+
   return {
     fetchCategories,
     fetchCategory,
@@ -186,6 +261,8 @@ export function useCategory() {
     updateCategory,
     deleteCategory,
     assignProductsToCategory,
+    checkSlugAvailability,
+    generateUniqueSlug,
   }
 }
 

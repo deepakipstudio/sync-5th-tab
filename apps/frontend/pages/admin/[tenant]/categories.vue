@@ -82,11 +82,12 @@
         <!-- Image Thumbnail -->
         <div class="aspect-[16/9] bg-admin-surface-raised relative">
           <img
-            v-if="category.imageUrl"
+            v-if="category.imageUrl && category.imageUrl.trim() !== ''"
             :src="getFullImageUrl(category.imageUrl)"
             :alt="category.name"
             class="w-full h-full object-cover"
-            @error="(e: Event) => (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23d1d5db%22%3E%3Cpath d=%22M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z%22/%3E%3C/svg%3E'"
+            @error="handleImageError"
+            @load="handleImageLoad"
           />
           <div v-else class="w-full h-full flex items-center justify-center">
             <svg class="w-12 h-12 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,7 +192,15 @@ async function loadCategories() {
   loadingCategories.value = true
   try {
     const tenantId = route.params.tenant as string
-    categories.value = await fetchCategories(tenantId)
+    const fetchedCategories = await fetchCategories(tenantId)
+    categories.value = fetchedCategories
+    // Debug: Log categories with image URLs
+    console.log('Loaded categories:', fetchedCategories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      imageUrl: cat.imageUrl,
+      fullUrl: cat.imageUrl ? getFullImageUrl(cat.imageUrl) : null
+    })))
   } catch (err: any) {
     console.error('Error fetching categories:', err)
     categories.value = []
@@ -278,8 +287,24 @@ function handleCategorySaved() {
 }
 
 function getFullImageUrl(url: string) {
+  if (!url) return ''
   if (url.startsWith('http')) return url
-  return `${backendUrl}${url}`
+  // Ensure URL starts with /
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`
+  return `${backendUrl}${cleanUrl}`
+}
+
+function handleImageError(e: Event) {
+  const img = e.target as HTMLImageElement
+  console.error('Failed to load category image:', img.src)
+  // Fallback to placeholder
+  img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23d1d5db%22%3E%3Cpath d=%22M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z%22/%3E%3C/svg%3E'
+}
+
+function handleImageLoad(e: Event) {
+  // Image loaded successfully
+  const img = e.target as HTMLImageElement
+  console.log('Category image loaded:', img.src)
 }
 
 onMounted(() => {

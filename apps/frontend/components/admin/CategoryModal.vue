@@ -1,6 +1,9 @@
 <template>
   <UiDialog :open="open" @update:open="(value) => $emit('update:open', value)" class="max-w-2xl">
     <UiDialogTitle class="sr-only">{{ editingCategory ? 'Edit Category' : 'Add Category' }}</UiDialogTitle>
+    <UiDialogDescription class="sr-only">
+      {{ editingCategory ? 'Edit category details and assign products' : 'Create a new category and assign products' }}
+    </UiDialogDescription>
     <div class="flex flex-col max-h-[90vh]">
       <div class="px-6 py-4 border-b border-admin-border flex items-center justify-between">
         <h2 class="text-lg font-semibold text-admin-text-primary">
@@ -38,21 +41,74 @@
             type="text"
             placeholder="Category name"
             class="w-full"
-            @input="generateSlugFromName"
           />
         </div>
 
         <!-- Slug -->
         <div>
           <UiLabel for="category-slug" class="block mb-1">Slug</UiLabel>
-          <UiInput
-            id="category-slug"
-            v-model="form.slug"
-            type="text"
-            placeholder="category-slug"
-            class="w-full"
-          />
-          <p class="text-xs text-admin-text-secondary mt-1">URL-friendly identifier (auto-generated from name)</p>
+          <div class="relative">
+            <UiInput
+              id="category-slug"
+              v-model="form.slug"
+              type="text"
+              placeholder="category-slug"
+              class="w-full pr-10"
+              @input="handleSlugInput"
+            />
+            <!-- Visual indicator -->
+            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <!-- Loading spinner -->
+              <svg
+                v-if="slugChecking"
+                class="w-5 h-5 text-admin-text-muted animate-spin"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <!-- Green checkmark -->
+              <svg
+                v-else-if="slugAvailable === true"
+                class="w-5 h-5 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <!-- Red X -->
+              <svg
+                v-else-if="slugAvailable === false"
+                class="w-5 h-5 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+          </div>
+          <p v-if="slugAvailable === false && suggestedSlug" class="text-xs text-admin-text-secondary mt-1">
+            Suggested: <span class="text-admin-brand-strong cursor-pointer" @click="useSuggestedSlug">{{ suggestedSlug }}</span>
+          </p>
+          <p v-else class="text-xs text-admin-text-secondary mt-1">URL-friendly identifier (auto-generated from name)</p>
         </div>
 
         <!-- Description -->
@@ -72,7 +128,8 @@
           <UiLabel for="category-sort-order" class="block mb-1">Sort Order</UiLabel>
           <UiInput
             id="category-sort-order"
-            v-model.number="form.sortOrder"
+            :model-value="form.sortOrder !== null ? String(form.sortOrder) : ''"
+            @update:model-value="(val) => form.sortOrder = val === '' ? null : Number(val)"
             type="number"
             placeholder="0"
             class="w-full"
@@ -184,7 +241,7 @@
         </UiButton>
         <UiButton
           @click="handleSave"
-          :disabled="saving || !form.name"
+          :disabled="isSaveDisabled"
           variant="default"
           class="flex-1"
         >
@@ -216,7 +273,7 @@ const emit = defineEmits<{
 
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
-const { createCategory, updateCategory } = useCategory()
+const { createCategory, updateCategory, checkSlugAvailability, generateUniqueSlug } = useCategory()
 
 const editingCategory = computed(() => !!props.category)
 
@@ -225,6 +282,11 @@ const form = ref({
   description: '',
   slug: '',
   sortOrder: null as number | null,
+})
+
+// Computed property for save button disabled state
+const isSaveDisabled = computed(() => {
+  return saving.value || !form.value.name || form.value.name.trim() === ''
 })
 
 const imageFile = ref<File | null>(null)
@@ -239,9 +301,16 @@ const availableProducts = ref<any[]>([])
 const selectedProductIds = ref<string[]>([])
 const loadingProducts = ref(false)
 
+// Slug validation state
+const slugChecking = ref(false)
+const slugAvailable = ref<boolean | null>(null)
+const slugManuallyEdited = ref(false)
+const suggestedSlug = ref<string | null>(null)
+let slugCheckTimeout: ReturnType<typeof setTimeout> | null = null
+
 // Initialize form from category prop
 watch(() => props.category, (category) => {
-  if (category) {
+  if (category && category.id) {
     form.value = {
       name: category.name,
       description: category.description || '',
@@ -251,14 +320,24 @@ watch(() => props.category, (category) => {
     imagePreview.value = category.imageUrl
     imageFile.value = null
     selectedProductIds.value = []
+    slugManuallyEdited.value = false
+    slugAvailable.value = null
+    suggestedSlug.value = null
     // Load existing product assignments when category is set
     if (props.open) {
       loadProductAssignments()
+      // Check slug availability for existing category
+      checkSlugAvailabilityDebounced()
     }
   } else {
     resetForm()
   }
 }, { immediate: true })
+
+// Watch name changes to auto-generate slug
+watch(() => form.value.name, () => {
+  generateSlugFromName()
+})
 
 // Load products for assignment
 async function loadProducts() {
@@ -278,7 +357,7 @@ async function loadProducts() {
 
 // Load existing product assignments for editing
 async function loadProductAssignments() {
-  if (!props.category) return
+  if (!props.category || !props.category.id) return
   
   try {
     const response = await $fetch<{ category: Category & { products?: any[] } }>(
@@ -293,9 +372,77 @@ async function loadProductAssignments() {
   }
 }
 
-function generateSlugFromName() {
-  if (form.value.name && !form.value.slug) {
-    form.value.slug = generateSlug(form.value.name)
+// Generate slug from name using server
+async function generateSlugFromName() {
+  if (!form.value.name) return
+  
+  // Only auto-fill if slug hasn't been manually edited
+  if (slugManuallyEdited.value) return
+  
+  try {
+    const excludeId = editingCategory.value && props.category?.id ? props.category.id : undefined
+    const response = await generateUniqueSlug(props.tenantId, form.value.name, excludeId)
+    form.value.slug = response.slug
+    // Check availability after setting (don't await - it's debounced)
+    checkSlugAvailabilityDebounced()
+  } catch (e: any) {
+    console.error('Error generating slug:', e)
+    // Fallback to client-side generation
+    if (!form.value.slug) {
+      form.value.slug = generateSlug(form.value.name)
+      checkSlugAvailabilityDebounced()
+    }
+  }
+}
+
+// Handle manual slug input
+function handleSlugInput() {
+  slugManuallyEdited.value = true
+  checkSlugAvailabilityDebounced()
+}
+
+// Check slug availability with debouncing
+async function checkSlugAvailabilityDebounced() {
+  // Clear existing timeout
+  if (slugCheckTimeout) {
+    clearTimeout(slugCheckTimeout)
+  }
+
+  // Don't check if slug is empty
+  if (!form.value.slug || form.value.slug.trim() === '') {
+    slugAvailable.value = null
+    suggestedSlug.value = null
+    return
+  }
+
+  // Set loading state
+  slugChecking.value = true
+  slugAvailable.value = null
+  suggestedSlug.value = null
+
+  // Debounce the check
+  slugCheckTimeout = setTimeout(async () => {
+    try {
+      const excludeId = editingCategory.value && props.category?.id ? props.category.id : undefined
+      const response = await checkSlugAvailability(props.tenantId, form.value.slug, excludeId)
+      slugAvailable.value = response.available
+      suggestedSlug.value = response.suggestedSlug || null
+    } catch (e: any) {
+      console.error('Error checking slug availability:', e)
+      slugAvailable.value = null
+      suggestedSlug.value = null
+    } finally {
+      slugChecking.value = false
+    }
+  }, 300) // 300ms debounce
+}
+
+// Use suggested slug
+function useSuggestedSlug() {
+  if (suggestedSlug.value) {
+    form.value.slug = suggestedSlug.value
+    slugManuallyEdited.value = true
+    checkSlugAvailabilityDebounced()
   }
 }
 
@@ -303,10 +450,26 @@ function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
+    
+    // Validate file type
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      error.value = 'Invalid file type. Allowed types: JPG, PNG, WebP, GIF'
+      return
+    }
+    
+    // Validate file size
     if (file.size > 2 * 1024 * 1024) {
       error.value = 'File size must be less than 2MB'
       return
     }
+    
+    console.log('CategoryModal - Image file selected:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    })
+    
     imageFile.value = file
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -328,10 +491,26 @@ function handleDrop(event: DragEvent) {
   isDragging.value = false
   if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
     const file = event.dataTransfer.files[0]
+    
+    // Validate file type
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      error.value = 'Invalid file type. Allowed types: JPG, PNG, WebP, GIF'
+      return
+    }
+    
+    // Validate file size
     if (file.size > 2 * 1024 * 1024) {
       error.value = 'File size must be less than 2MB'
       return
     }
+    
+    console.log('CategoryModal - Image file dropped:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    })
+    
     imageFile.value = file
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -374,6 +553,14 @@ function resetForm() {
   selectedProductIds.value = []
   error.value = null
   slugWasAutoModified.value = false
+  slugManuallyEdited.value = false
+  slugAvailable.value = null
+  suggestedSlug.value = null
+  slugChecking.value = false
+  if (slugCheckTimeout) {
+    clearTimeout(slugCheckTimeout)
+    slugCheckTimeout = null
+  }
 }
 
 async function handleSave() {
@@ -387,16 +574,36 @@ async function handleSave() {
   slugWasAutoModified.value = false
 
   try {
+    // Debug: Log form values before sending
+    console.log('CategoryModal - Form values before save:', {
+      name: form.value.name,
+      description: form.value.description,
+      slug: form.value.slug,
+      sortOrder: form.value.sortOrder,
+      hasImageFile: !!imageFile.value,
+      imageFileName: imageFile.value?.name,
+      imageFileSize: imageFile.value?.size,
+    })
+
     const categoryData = {
       name: form.value.name,
-      description: form.value.description || undefined,
+      description: form.value.description, // Keep as-is, don't convert empty string to undefined
       slug: form.value.slug || undefined,
       sortOrder: form.value.sortOrder || undefined,
       image: imageFile.value || undefined,
     }
 
+    console.log('CategoryModal - Category data being sent:', {
+      name: categoryData.name,
+      description: categoryData.description,
+      slug: categoryData.slug,
+      sortOrder: categoryData.sortOrder,
+      hasImage: !!categoryData.image,
+      imageName: categoryData.image?.name,
+    })
+
     let result
-    if (editingCategory.value && props.category) {
+    if (editingCategory.value && props.category?.id) {
       result = await updateCategory(props.tenantId, props.category.id, categoryData)
     } else {
       result = await createCategory(props.tenantId, categoryData)
@@ -458,9 +665,15 @@ async function updateProductAssignments(categoryId: string) {
 // Load products when modal opens
 watch(() => props.open, (open) => {
   if (open) {
+    // Reset form if opening for new category
+    if (!editingCategory.value) {
+      resetForm()
+    }
     loadProducts()
-    if (editingCategory.value) {
+    if (editingCategory.value && props.category?.id) {
       loadProductAssignments()
+      // Check slug availability for existing category
+      checkSlugAvailabilityDebounced()
     }
   } else {
     resetForm()

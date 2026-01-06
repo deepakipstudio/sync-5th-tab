@@ -149,8 +149,8 @@ export async function postTenantCategory(req: Request, res: Response) {
     );
 
     // Handle image upload if provided
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-    const imageFile = files?.image?.[0];
+    // Note: upload.single('image') stores file in req.file, not req.files.image[0]
+    const imageFile = req.file;
     let imageUrl: string | null = null;
 
     if (imageFile) {
@@ -207,6 +207,14 @@ export async function putTenantCategory(req: Request, res: Response) {
       return res.status(404).json({ error: 'Category not found' });
     }
 
+    // Debug: Log what we receive
+    console.log('Category update - req.body:', req.body);
+    console.log('Category update - req.body keys:', Object.keys(req.body || {}));
+    console.log('Category update - name:', req.body.name);
+    console.log('Category update - description:', req.body.description);
+    console.log('Category update - slug:', req.body.slug);
+    console.log('Category update - sortOrder:', req.body.sortOrder);
+
     const { name, description, slug: providedSlug, sortOrder } = req.body;
 
     // Handle slug update
@@ -227,11 +235,24 @@ export async function putTenantCategory(req: Request, res: Response) {
     }
 
     // Handle image update
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-    const imageFile = files?.image?.[0];
+    // Note: upload.single('image') stores file in req.file, not req.files.image[0]
+    const imageFile = req.file;
     let imageUrl: string | null = category.imageUrl;
 
+    console.log('Category update - file received:', {
+      hasImageFile: !!imageFile,
+      imageFileInfo: imageFile ? {
+        fieldname: imageFile.fieldname,
+        originalname: imageFile.originalname,
+        mimetype: imageFile.mimetype,
+        size: imageFile.size,
+        bufferLength: imageFile.buffer?.length
+      } : null,
+      currentImageUrl: category.imageUrl
+    });
+
     if (imageFile) {
+      console.log('Updating category image...');
       // Delete old image if exists
       if (category.imageUrl) {
         await storage.deleteCategoryImage(category.imageUrl);
@@ -242,17 +263,47 @@ export async function putTenantCategory(req: Request, res: Response) {
         imageFile.originalname,
         imageFile.mimetype
       );
+      console.log('Category image updated to:', imageUrl);
     }
+
+    // Always update fields that are present in req.body
+    // Handle empty strings: empty string = clear (set to null), undefined = no change
+    const updateData: any = {};
+    
+    if (name !== undefined) {
+      updateData.name = name;
+    }
+    
+    if (description !== undefined) {
+      // Empty string means clear the description (set to null)
+      updateData.description = description === '' ? null : description;
+    }
+    
+    if (finalSlug !== category.slug) {
+      updateData.slug = finalSlug;
+    }
+    
+    if (imageUrl !== category.imageUrl) {
+      updateData.imageUrl = imageUrl;
+    }
+    
+    if (sortOrder !== undefined) {
+      updateData.sortOrder = sortOrder ? parseInt(String(sortOrder), 10) : null;
+    }
+
+    console.log('Category update - updateData:', updateData);
+    console.log('Category update - will update fields:', Object.keys(updateData));
 
     const updatedCategory = await prisma.category.update({
       where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(description !== undefined && { description: description || null }),
-        ...(finalSlug !== category.slug && { slug: finalSlug }),
-        ...(imageUrl !== category.imageUrl && { imageUrl }),
-        ...(sortOrder !== undefined && { sortOrder: sortOrder ? parseInt(String(sortOrder), 10) : null }),
-      },
+      data: updateData,
+    });
+
+    console.log('Category update - updated category:', {
+      id: updatedCategory.id,
+      name: updatedCategory.name,
+      description: updatedCategory.description,
+      imageUrl: updatedCategory.imageUrl,
     });
 
     res.json({
@@ -478,6 +529,77 @@ export async function putCategoriesReorder(req: Request, res: Response) {
   } catch (error: any) {
     console.error('Error reordering categories:', error);
     res.status(500).json({ error: 'Failed to reorder categories' });
+  }
+}
+
+// GET /admin/:tenant/categories/check-slug - Check if slug is available
+export async function checkSlugAvailability(req: Request, res: Response) {
+  try {
+    const { tenant } = req.params;
+    const { slug, excludeId } = req.query;
+    const result = await validateTenantAndSession(req, tenant);
+
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    if (!slug || typeof slug !== 'string') {
+      return res.status(400).json({ error: 'Slug parameter is required' });
+    }
+
+    // Check if slug exists
+    const existing = await prisma.category.findFirst({
+      where: {
+        tenantId: tenant,
+        slug: slug,
+        deletedAt: null,
+        ...(excludeId && typeof excludeId === 'string' ? { id: { not: excludeId } } : {}),
+      },
+    });
+
+    if (!existing) {
+      // Slug is available
+      return res.json({ available: true });
+    }
+
+    // Slug is taken, generate a suggested unique slug
+    const { slug: suggestedSlug } = await ensureUniqueSlug(slug, tenant, excludeId as string | undefined);
+    
+    return res.json({
+      available: false,
+      suggestedSlug,
+    });
+  } catch (error: any) {
+    console.error('Error checking slug availability:', error);
+    res.status(500).json({ error: 'Failed to check slug availability' });
+  }
+}
+
+// GET /admin/:tenant/categories/generate-slug - Generate unique slug from name
+export async function generateUniqueSlugFromName(req: Request, res: Response) {
+  try {
+    const { tenant } = req.params;
+    const { name, excludeId } = req.query;
+    const result = await validateTenantAndSession(req, tenant);
+
+    if ('error' in result) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: 'Name parameter is required' });
+    }
+
+    // Generate slug from name
+    const baseSlug = generateSlug(name);
+    
+    // Ensure it's unique
+    const { slug } = await ensureUniqueSlug(baseSlug, tenant, excludeId as string | undefined);
+
+    return res.json({ slug });
+  } catch (error: any) {
+    console.error('Error generating slug:', error);
+    res.status(500).json({ error: 'Failed to generate slug' });
   }
 }
 
