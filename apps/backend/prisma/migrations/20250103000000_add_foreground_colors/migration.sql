@@ -4,3 +4,4 @@ ALTER TABLE "TenantBrand" ADD COLUMN IF NOT EXISTS "secondaryForegroundColor" TE
 
 
 
+

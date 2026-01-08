@@ -68,6 +68,161 @@
 
     <!-- Content (shown when not loading) -->
     <template v-else>
+    <!-- Store Information Section -->
+    <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+      <div class="mb-4">
+        <h2 class="text-lg font-semibold text-admin-text-primary">Store Information</h2>
+        <p class="text-sm text-admin-text-secondary mt-1">Update your store details and branding</p>
+      </div>
+
+      <UiAlert v-if="storeInfoError" variant="error" class="mb-4">
+        {{ storeInfoError }}
+      </UiAlert>
+
+      <form @submit.prevent="saveStoreInfo" class="space-y-4">
+        <!-- Location -->
+        <div>
+          <UiLabel class="block mb-2">
+            Location <span class="text-admin-state-danger-text">*</span>
+          </UiLabel>
+          <select
+            v-model="storeInfoForm.defaultLocationId"
+            :disabled="loadingLocations"
+            class="flex h-10 w-full rounded-lg border border-admin-border bg-admin-surface-base px-3 py-2 text-sm text-admin-text-primary placeholder:text-admin-text-muted focus:outline-none focus:ring-2 focus:ring-admin-brand-strong focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="" disabled>Select a location</option>
+            <option
+              v-for="location in locations"
+              :key="location.id"
+              :value="location.id"
+            >
+              {{ location.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Store Name -->
+        <div>
+          <UiLabel class="block mb-2">
+            Store Name <span class="text-admin-state-danger-text">*</span>
+          </UiLabel>
+          <UiInput
+            v-model="storeInfoForm.storeName"
+            placeholder="My Awesome Store"
+            required
+          />
+        </div>
+
+        <!-- Description -->
+        <div>
+          <UiLabel class="block mb-2">Description</UiLabel>
+          <UiTextarea
+            v-model="storeInfoForm.storeDescription"
+            placeholder="Tell customers about your store..."
+            rows="4"
+          />
+        </div>
+
+        <!-- Contact Email -->
+        <div>
+          <UiLabel class="block mb-2">
+            Contact Email <span class="text-admin-state-danger-text">*</span>
+          </UiLabel>
+          <UiInput
+            v-model="storeInfoForm.contactEmail"
+            type="email"
+            placeholder="contact@store.com"
+            required
+          />
+        </div>
+
+        <div class="flex justify-end">
+          <UiButton
+            type="submit"
+            :disabled="savingStoreInfo"
+            variant="default"
+          >
+            {{ savingStoreInfo ? 'Saving...' : 'Save Changes' }}
+          </UiButton>
+        </div>
+      </form>
+    </div>
+
+    <!-- Store Hours Section -->
+    <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
+      <div class="mb-4">
+        <h2 class="text-lg font-semibold text-admin-text-primary">
+          Store Hours <span class="text-admin-state-danger-text">*</span>
+        </h2>
+        <p class="text-sm text-admin-text-secondary mt-1">Set your operating hours for customer reference</p>
+      </div>
+
+      <UiAlert v-if="storeHoursError" variant="error" class="mb-4">
+        {{ storeHoursError }}
+      </UiAlert>
+
+      <div class="space-y-3">
+        <div
+          v-for="(hour, index) in storeHoursForm"
+          :key="hour.dayOfWeek"
+          class="flex items-center gap-4 p-3 bg-admin-surface-raised rounded-lg border border-admin-border"
+        >
+          <!-- Day Name -->
+          <div class="w-24 text-sm font-medium text-admin-text-primary">
+            {{ hour.dayOfWeek }}
+          </div>
+
+          <!-- Time Inputs Container (fixed width to prevent layout shift) -->
+          <div class="flex items-center gap-2 flex-1">
+            <UiInput
+              v-model="hour.openTime"
+              type="text"
+              placeholder="09:00 AM"
+              class="w-32"
+              :disabled="!hour.isOpen"
+              @blur="(e) => formatTimeInput(e, hour, 'openTime')"
+              required
+            />
+            <span class="text-admin-text-secondary text-sm">to</span>
+            <UiInput
+              v-model="hour.closeTime"
+              type="text"
+              placeholder="05:00 PM"
+              class="w-32"
+              :disabled="!hour.isOpen"
+              @blur="(e) => formatTimeInput(e, hour, 'closeTime')"
+              required
+            />
+          </div>
+
+          <!-- Toggle Switch -->
+          <UiSwitch
+            v-model="hour.isOpen"
+            @update:model-value="(value) => {
+              if (!value) {
+                hour.openTime = null
+                hour.closeTime = null
+              } else if (!hour.openTime || !hour.closeTime) {
+                // Set defaults in 12-hour format for display
+                hour.openTime = hour.openTime || '09:00 AM'
+                hour.closeTime = hour.closeTime || '05:00 PM'
+              }
+            }"
+          />
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-6">
+        <UiButton
+          @click="saveStoreHours"
+          :disabled="savingStoreHours"
+          variant="default"
+        >
+          {{ savingStoreHours ? 'Saving...' : 'Save Hours' }}
+        </UiButton>
+      </div>
+    </div>
+
     <!-- Brand Settings Section -->
     <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
       <div class="flex items-center justify-between mb-4">
@@ -665,6 +820,7 @@ interface Banner {
 const route = useRoute()
 const config = useRuntimeConfig()
 const { fetchWithCache, invalidate } = useAdminCache()
+const { fetchStoreSettings, fetchLocations, updateStoreInfo, updateStoreHours } = useStoreSettings()
 
 const tenantId = computed(() => route.params.tenant as string)
 
@@ -730,6 +886,32 @@ const showDeleteModal = ref(false)
 const bannerToDelete = ref<Banner | null>(null)
 const deleting = ref(false)
 
+// Store Information State
+const storeInfoForm = ref({
+  storeName: '',
+  storeDescription: '',
+  contactEmail: '',
+  defaultLocationId: null as string | null,
+})
+const savingStoreInfo = ref(false)
+const storeInfoError = ref('')
+const locations = ref<Array<{ id: string; name: string }>>([])
+const loadingLocations = ref(false)
+
+
+// Store Hours State
+const storeHoursForm = ref([
+  { dayOfWeek: 'Monday', openTime: null as string | null, closeTime: null as string | null, isOpen: false },
+  { dayOfWeek: 'Tuesday', openTime: null as string | null, closeTime: null as string | null, isOpen: false },
+  { dayOfWeek: 'Wednesday', openTime: null as string | null, closeTime: null as string | null, isOpen: false },
+  { dayOfWeek: 'Thursday', openTime: null as string | null, closeTime: null as string | null, isOpen: false },
+  { dayOfWeek: 'Friday', openTime: null as string | null, closeTime: null as string | null, isOpen: false },
+  { dayOfWeek: 'Saturday', openTime: null as string | null, closeTime: null as string | null, isOpen: false },
+  { dayOfWeek: 'Sunday', openTime: null as string | null, closeTime: null as string | null, isOpen: false },
+])
+const savingStoreHours = ref(false)
+const storeHoursError = ref('')
+
 // Toast notifications use Sonner (imported from sonner)
 
 // Get full image URL
@@ -773,7 +955,7 @@ async function handleSyncBrand() {
 }
 
 // Fetch store settings (brand colors and banners) with cache-first strategy
-async function fetchStoreSettings() {
+async function loadStoreSettings() {
   const cacheKey = `admin:store-settings:${tenantId.value}`
   const ttl = 5 * 60 * 1000 // 5 minutes
 
@@ -784,6 +966,19 @@ async function fetchStoreSettings() {
       secondaryBrandColor: string | null
     }
     banners: Banner[]
+    storeInfo: {
+      storeName: string | null
+      storeDescription: string | null
+      contactEmail: string | null
+      defaultLocationId: string | null
+    }
+    storeHours: Array<{
+      dayOfWeek: string
+      openTime: string | null
+      closeTime: string | null
+      isOpen: boolean
+    }>
+    locations: Array<{ id: string; name: string }>
   }>(cacheKey)
   
   if (cached) {
@@ -791,6 +986,47 @@ async function fetchStoreSettings() {
     brandForm.value.primaryBrandColor = cached.brandSettings.primaryBrandColor || '#8e213e'
     brandForm.value.secondaryBrandColor = cached.brandSettings.secondaryBrandColor || '#a83d5a'
     banners.value = cached.banners
+    storeInfoForm.value = {
+      storeName: cached.storeInfo.storeName || '',
+      storeDescription: cached.storeInfo.storeDescription || '',
+      contactEmail: cached.storeInfo.contactEmail || '',
+      defaultLocationId: cached.storeInfo.defaultLocationId || null,
+    }
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    if (cached.storeHours && cached.storeHours.length > 0) {
+      // Create a map of existing hours by day
+      const hoursMap = new Map(cached.storeHours.map(hour => [hour.dayOfWeek, hour]))
+      
+      // Build the form array ensuring all days are present and in order
+      storeHoursForm.value = dayOrder.map(day => {
+        const hour = hoursMap.get(day)
+        if (hour) {
+          return {
+            dayOfWeek: hour.dayOfWeek,
+            openTime: hour.openTime ? formatTimeTo12Hour(hour.openTime) : null,
+            closeTime: hour.closeTime ? formatTimeTo12Hour(hour.closeTime) : null,
+            isOpen: hour.isOpen,
+          }
+        } else {
+          // Day not in cached data, use default
+          return {
+            dayOfWeek: day,
+            openTime: null,
+            closeTime: null,
+            isOpen: false,
+          }
+        }
+      })
+    } else {
+      // No cached store hours, use defaults
+      storeHoursForm.value = dayOrder.map(day => ({
+        dayOfWeek: day,
+        openTime: null,
+        closeTime: null,
+        isOpen: false,
+      }))
+    }
+    locations.value = cached.locations || []
     loading.value = false
   } else {
     loading.value = true
@@ -800,44 +1036,61 @@ async function fetchStoreSettings() {
   brandError.value = ''
   
   try {
-    const data = await fetchWithCache(
-      cacheKey,
-      async () => {
-        const response = await $fetch<{
-          brandSettings: {
-            primaryBrandColor: string | null
-            secondaryBrandColor: string | null
-          }
-          banners: Banner[]
-        }>(`/admin/${tenantId.value}/store-settings`, {
-          baseURL: config.public.backendUrl,
-          credentials: 'include',
-        })
-        return {
-          brandSettings: response.brandSettings,
-          banners: response.banners,
-        }
-      },
-      {
-        ttl,
-        onBackgroundUpdate: (freshData: {
-          brandSettings: {
-            primaryBrandColor: string | null
-            secondaryBrandColor: string | null
-          }
-          banners: Banner[]
-        }) => {
-          // Update UI when fresh data arrives
-          brandForm.value.primaryBrandColor = freshData.brandSettings.primaryBrandColor || '#8e213e'
-          brandForm.value.secondaryBrandColor = freshData.brandSettings.secondaryBrandColor || '#a83d5a'
-          banners.value = freshData.banners
-        },
-      }
-    )
+    const data = await fetchStoreSettings(tenantId.value)
     
     // Set brand colors (with defaults)
     brandForm.value.primaryBrandColor = data.brandSettings.primaryBrandColor || '#8e213e'
     brandForm.value.secondaryBrandColor = data.brandSettings.secondaryBrandColor || '#a83d5a'
+    
+    // Set banners
+    banners.value = data.banners
+    
+    // Set store info
+    storeInfoForm.value = {
+      storeName: data.storeInfo.storeName || '',
+      storeDescription: data.storeInfo.storeDescription || '',
+      contactEmail: data.storeInfo.contactEmail || '',
+      defaultLocationId: data.storeInfo.defaultLocationId || null,
+    }
+    
+    // Set store hours (convert from 24-hour to 12-hour format for display)
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    if (data.storeHours && data.storeHours.length > 0) {
+      // Create a map of existing hours by day
+      const hoursMap = new Map(data.storeHours.map(hour => [hour.dayOfWeek, hour]))
+      
+      // Build the form array ensuring all days are present and in order
+      storeHoursForm.value = dayOrder.map(day => {
+        const hour = hoursMap.get(day)
+        if (hour) {
+          return {
+            dayOfWeek: hour.dayOfWeek,
+            openTime: hour.openTime ? formatTimeTo12Hour(hour.openTime) : null,
+            closeTime: hour.closeTime ? formatTimeTo12Hour(hour.closeTime) : null,
+            isOpen: hour.isOpen,
+          }
+        } else {
+          // Day not in backend data, use default
+          return {
+            dayOfWeek: day,
+            openTime: null,
+            closeTime: null,
+            isOpen: false,
+          }
+        }
+      })
+    } else {
+      // No store hours from backend, use defaults
+      storeHoursForm.value = dayOrder.map(day => ({
+        dayOfWeek: day,
+        openTime: null,
+        closeTime: null,
+        isOpen: false,
+      }))
+    }
+    
+    // Set locations
+    locations.value = data.locations || []
     banners.value = data.banners
   } catch (e: any) {
     error.value = e.data?.error || e.message || 'Failed to load store settings'
@@ -847,6 +1100,171 @@ async function fetchStoreSettings() {
     }
   } finally {
     loading.value = false
+  }
+}
+
+// Load locations
+async function loadLocations() {
+  loadingLocations.value = true
+  try {
+    const locs = await fetchLocations(tenantId.value)
+    locations.value = locs
+  } catch (e: any) {
+    console.error('Error loading locations:', e)
+  } finally {
+    loadingLocations.value = false
+  }
+}
+
+// Save store information
+async function saveStoreInfo() {
+  savingStoreInfo.value = true
+  storeInfoError.value = ''
+
+  try {
+    // Validation
+    if (!storeInfoForm.value.storeName?.trim()) {
+      storeInfoError.value = 'Store name is required'
+      savingStoreInfo.value = false
+      return
+    }
+
+    if (!storeInfoForm.value.contactEmail?.trim()) {
+      storeInfoError.value = 'Contact email is required'
+      savingStoreInfo.value = false
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(storeInfoForm.value.contactEmail.trim())) {
+      storeInfoError.value = 'Invalid email format'
+      savingStoreInfo.value = false
+      return
+    }
+
+    await updateStoreInfo(tenantId.value, {
+      storeName: storeInfoForm.value.storeName.trim(),
+      storeDescription: storeInfoForm.value.storeDescription?.trim() || null,
+      contactEmail: storeInfoForm.value.contactEmail.trim(),
+      defaultLocationId: storeInfoForm.value.defaultLocationId || null,
+    })
+
+    showToast('success', 'Store information saved successfully')
+  } catch (e: any) {
+    storeInfoError.value = e.data?.error || e.message || 'Failed to save store information'
+    showToast('error', storeInfoError.value)
+  } finally {
+    savingStoreInfo.value = false
+  }
+}
+
+// Time format conversion functions
+function formatTimeTo12Hour(time24: string | null): string {
+  if (!time24) return ''
+  const [hours, minutes] = time24.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+  return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${period}`
+}
+
+function formatTimeTo24Hour(time12: string | null): string | null {
+  if (!time12) return null
+  // Handle formats like "09:00 AM" or "9:00 AM"
+  const match = time12.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+  if (!match) {
+    // If already in 24-hour format, return as is
+    if (time12.match(/^\d{2}:\d{2}$/)) return time12
+    return null
+  }
+  let hours = parseInt(match[1], 10)
+  const minutes = match[2]
+  const period = match[3].toUpperCase()
+  
+  if (period === 'PM' && hours !== 12) {
+    hours += 12
+  } else if (period === 'AM' && hours === 12) {
+    hours = 0
+  }
+  
+  return `${String(hours).padStart(2, '0')}:${minutes}`
+}
+
+// Format time input on blur to ensure correct format
+function formatTimeInput(event: Event, hour: any, field: 'openTime' | 'closeTime') {
+  const input = event.target as HTMLInputElement
+  const value = input.value.trim()
+  if (!value) return
+  
+  // Try to parse and format the time
+  const formatted24 = formatTimeTo24Hour(value)
+  if (formatted24) {
+    // Convert back to 12-hour for display
+    hour[field] = formatTimeTo12Hour(formatted24)
+  } else {
+    // If parsing fails, try to fix common issues
+    // Handle "9:00am" -> "09:00 AM"
+    const cleaned = value.replace(/\s+/g, ' ').toUpperCase()
+    const match = cleaned.match(/(\d{1,2}):?(\d{0,2})\s*(AM|PM)?/i)
+    if (match) {
+      let hours = parseInt(match[1] || '0', 10)
+      let minutes = match[2] || '00'
+      const period = match[3] || (hours >= 12 ? 'PM' : 'AM')
+      
+      if (minutes.length === 1) minutes = minutes + '0'
+      if (minutes.length === 0) minutes = '00'
+      
+      hours = Math.min(23, Math.max(0, hours))
+      const mins = Math.min(59, Math.max(0, parseInt(minutes, 10)))
+      
+      hour[field] = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${period.toUpperCase()}`
+    }
+  }
+}
+
+// Save store hours
+async function saveStoreHours() {
+  savingStoreHours.value = true
+  storeHoursError.value = ''
+
+  try {
+    // Convert display times to 24-hour format for backend
+    const hoursToSave = storeHoursForm.value.map(hour => ({
+      dayOfWeek: hour.dayOfWeek,
+      openTime: hour.isOpen ? formatTimeTo24Hour(hour.openTime) : null,
+      closeTime: hour.isOpen ? formatTimeTo24Hour(hour.closeTime) : null,
+      isOpen: hour.isOpen,
+    }))
+
+    // Validation
+    for (const hour of hoursToSave) {
+      if (hour.isOpen) {
+        if (!hour.openTime || !hour.closeTime) {
+          storeHoursError.value = `${hour.dayOfWeek}: Both open and close times are required when enabled`
+          savingStoreHours.value = false
+          return
+        }
+
+        // Validate closeTime is after openTime
+        const [openHour, openMin] = hour.openTime.split(':').map(Number)
+        const [closeHour, closeMin] = hour.closeTime.split(':').map(Number)
+        const openMinutes = openHour * 60 + openMin
+        const closeMinutes = closeHour * 60 + closeMin
+
+        if (closeMinutes <= openMinutes) {
+          storeHoursError.value = `${hour.dayOfWeek}: Close time must be after open time`
+          savingStoreHours.value = false
+          return
+        }
+      }
+    }
+
+    await updateStoreHours(tenantId.value, hoursToSave)
+    showToast('success', 'Store hours saved successfully')
+  } catch (e: any) {
+    storeHoursError.value = e.data?.error || e.message || 'Failed to save store hours'
+    showToast('error', storeHoursError.value)
+  } finally {
+    savingStoreHours.value = false
   }
 }
 
@@ -901,7 +1319,7 @@ async function saveBrandSettings() {
     
     // Invalidate cache to force refresh
     invalidate(cacheKey)
-    await fetchStoreSettings()
+    await loadStoreSettings()
     
     showToast('success', 'Brand settings saved successfully')
   } catch (e: any) {
@@ -1063,7 +1481,7 @@ async function saveBanner() {
     closeModal()
     // Invalidate cache and refresh
     invalidate(`admin:store-settings:${tenantId.value}`)
-    await fetchStoreSettings()
+    await loadStoreSettings()
   } catch (e: any) {
     formError.value = e.data?.error || e.message || 'Failed to save banner'
   } finally {
@@ -1093,7 +1511,7 @@ async function deleteBanner() {
     showToast('success', 'Banner deleted successfully')
     // Invalidate cache and refresh
     invalidate(`admin:store-settings:${tenantId.value}`)
-    await fetchStoreSettings()
+    await loadStoreSettings()
   } catch (e: any) {
     showToast('error', e.data?.error || e.message || 'Failed to delete banner')
   } finally {
@@ -1232,7 +1650,8 @@ function getFeaturedImage(product: any) {
 
 onMounted(() => {
   fetchBrandData()
-  fetchStoreSettings()
+  loadStoreSettings()
+  loadLocations()
   
   // Handle hash scrolling (e.g., #banners)
   nextTick(() => {

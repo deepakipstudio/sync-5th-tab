@@ -15,6 +15,9 @@ import {
   updateBrandSettings,
   getTenantSettings,
   syncBrand,
+  getStoreLocations,
+  updateStoreInfo,
+  updateStoreHours,
   uploadBannerImage,
   handleMulterError,
   uploadProductImages,
@@ -90,6 +93,9 @@ app.get('/admin/:tenant/settings', getTenantSettings);
 app.post('/admin/:tenant/sync-brand', syncBrand);
 app.get('/admin/:tenant/store-settings', getStoreSettings);
 app.put('/admin/:tenant/store-settings/brand', updateBrandSettings);
+app.get('/admin/:tenant/store-settings/locations', getStoreLocations);
+app.put('/admin/:tenant/store-settings/store-info', updateStoreInfo);
+app.put('/admin/:tenant/store-settings/store-hours', updateStoreHours);
 
 // Banner routes
 app.get('/admin/:tenant/banners', getTenantBanners);
