@@ -161,50 +161,87 @@
       </div>
 
       <!-- MT Data (Read-only) -->
-      <div class="bg-admin-surface-base rounded-lg border border-admin-border p-6">
-        <h2 class="text-lg font-semibold text-admin-text-primary mb-4">Pricing & Stock (from Marianatek)</h2>
+      <UiCard variant="default" class="p-5">
+        <UiCardHeader class="p-0 pb-4">
+          <UiCardTitle class="mb-1">Pricing & Stock</UiCardTitle>
+          <UiCardDescription>Data pulled live from Marianatek</UiCardDescription>
+        </UiCardHeader>
         
-        <div v-if="variant?.mtData" class="space-y-4">
+        <div v-if="variant?.mtData" class="space-y-5">
           <!-- Base Price -->
-          <div>
-            <span class="text-sm font-medium text-admin-text-primary">Base Price:</span>
-            <span class="text-lg text-admin-text-primary ml-2">${{ variant.mtData.attributes?.price || '0.00' }}</span>
-            <span class="text-sm text-admin-text-secondary ml-1">(All locations)</span>
+          <div class="flex items-center gap-3 pb-4 border-b border-admin-border">
+            <div class="flex-1">
+              <div class="text-xs font-medium text-admin-text-secondary mb-1">Base Price</div>
+              <div class="text-2xl font-semibold text-admin-text-primary">${{ variant.mtData.attributes?.price || '0.00' }}</div>
+            </div>
+            <UiBadge variant="default" class="shrink-0">All Locations</UiBadge>
           </div>
 
           <!-- Variant Attributes -->
-          <div v-if="variant.mtData.attributes?.variant_attributes?.length > 0">
-            <h3 class="text-sm font-medium text-admin-text-primary mb-2">Attributes</h3>
+          <div v-if="variant.mtData.attributes?.variant_attributes?.length > 0" class="space-y-2">
+            <h3 class="text-sm font-semibold text-admin-text-primary">Attributes</h3>
             <div class="flex flex-wrap gap-2">
-              <span
+              <UiBadge
                 v-for="attr in variant.mtData.attributes.variant_attributes"
                 :key="attr.code"
-                class="text-sm px-3 py-1 bg-admin-surface-raised text-admin-text-primary rounded"
+                variant="info"
               >
                 {{ attr.name }}: {{ attr.value || 'N/A' }}
-              </span>
+              </UiBadge>
             </div>
           </div>
 
           <!-- Location Overrides -->
-          <div v-if="variant.mtData.attributes?.region_overrides?.length > 0">
-            <h3 class="text-sm font-medium text-admin-text-primary mb-2">Location Pricing & Stock</h3>
-            <div class="space-y-3">
+          <div v-if="variant.mtData.attributes?.region_overrides?.length > 0" class="space-y-2">
+            <h3 class="text-sm font-semibold text-admin-text-primary">Location Pricing & Stock</h3>
+            <div class="space-y-1">
               <div
                 v-for="region in variant.mtData.attributes.region_overrides"
                 :key="region.id"
-                class="pl-4 border-l-2 border-admin-border"
+                class="border border-admin-border rounded-md overflow-hidden"
               >
-                <div class="font-medium text-admin-text-primary mb-2">{{ region.name }}</div>
-                <div class="space-y-2">
-                  <div
-                    v-for="location in region.location_overrides"
-                    :key="location.id"
-                    class="text-sm bg-admin-surface-raised p-2 rounded"
-                  >
-                    <div class="font-medium text-admin-text-primary">{{ location.name }}</div>
-                    <div class="text-admin-text-secondary">
-                      Price: ${{ location.price }} | Stock: {{ location.present_quantity ?? 'N/A' }}
+                <button
+                  @click="toggleRegion(region.id)"
+                  class="w-full flex items-center justify-between p-3 text-left hover:bg-admin-surface-hover transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-4 h-4 text-admin-text-secondary transition-transform"
+                      :class="{ 'rotate-90': expandedRegions.has(region.id) }"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span class="text-sm font-semibold text-admin-brand-strong">{{ region.name }}</span>
+                    <UiBadge variant="default" class="text-xs">
+                      {{ region.location_overrides?.length || 0 }} location{{ (region.location_overrides?.length || 0) !== 1 ? 's' : '' }}
+                    </UiBadge>
+                  </div>
+                </button>
+                <div
+                  v-show="expandedRegions.has(region.id)"
+                  class="border-t border-admin-border bg-admin-surface-raised"
+                >
+                  <div class="p-2 space-y-1">
+                    <div
+                      v-for="location in region.location_overrides"
+                      :key="location.id"
+                      class="group flex items-center justify-between px-3 py-2 rounded hover:bg-admin-surface-base transition-colors"
+                    >
+                      <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="font-medium text-sm text-admin-text-primary truncate">{{ location.name }}</div>
+                        <div class="flex items-center gap-1.5 text-xs text-admin-text-secondary shrink-0">
+                          <span>${{ location.price }}</span>
+                        </div>
+                      </div>
+                      <UiBadge
+                        :variant="(location.present_quantity ?? 0) === 0 ? 'danger' : 'success'"
+                        class="shrink-0 ml-2"
+                      >
+                        {{ location.present_quantity ?? 'N/A' }}
+                      </UiBadge>
                     </div>
                   </div>
                 </div>
@@ -212,10 +249,10 @@
             </div>
           </div>
         </div>
-        <div v-else class="text-sm text-admin-text-secondary">
-          Loading pricing data...
+        <div v-else class="py-4">
+          <p class="text-sm text-admin-text-secondary text-center">Loading pricing data...</p>
         </div>
-      </div>
+      </UiCard>
 
       <!-- Form Error -->
       <UiAlert v-if="formError" variant="error">
@@ -314,6 +351,17 @@ const deletedImageIds = ref<string[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
 const featuredImageId = ref<string | null>(null)
+
+// Collapsible regions state
+const expandedRegions = ref<Set<string>>(new Set())
+
+function toggleRegion(regionId: string) {
+  if (expandedRegions.value.has(regionId)) {
+    expandedRegions.value.delete(regionId)
+  } else {
+    expandedRegions.value.add(regionId)
+  }
+}
 
 // Fetch variant
 async function fetchVariant() {
