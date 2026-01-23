@@ -30,22 +30,83 @@
       </div>
     </div>
 
+    <!-- Search and Filters -->
+    <div class="bg-admin-surface-base rounded-lg border border-admin-border p-4 space-y-4">
+      <!-- Search Bar -->
+      <div>
+        <UiInput
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search products by name or description..."
+          class="w-full"
+        />
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Category Filter -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-admin-text-secondary">Category:</label>
+          <select
+            v-model="selectedCategory"
+            class="px-3 py-1.5 text-sm rounded-lg border border-admin-border bg-admin-surface-base text-admin-text-primary focus:outline-none focus:ring-2 focus:ring-admin-brand-strong"
+          >
+            <option value="">All Categories</option>
+            <option v-for="category in availableCategories" :key="category.id" :value="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Stock Filter -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-admin-text-secondary">Stock:</label>
+          <select
+            v-model="stockFilter"
+            class="px-3 py-1.5 text-sm rounded-lg border border-admin-border bg-admin-surface-base text-admin-text-primary focus:outline-none focus:ring-2 focus:ring-admin-brand-strong"
+          >
+            <option value="all">All</option>
+            <option value="in-stock">In Stock</option>
+            <option value="out-of-stock">Out of Stock</option>
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-admin-text-secondary">Status:</label>
+          <select
+            v-model="statusFilter"
+            class="px-3 py-1.5 text-sm rounded-lg border border-admin-border bg-admin-surface-base text-admin-text-primary focus:outline-none focus:ring-2 focus:ring-admin-brand-strong"
+          >
+            <option value="all">All</option>
+            <option value="visible">Active</option>
+            <option value="hidden">Draft</option>
+          </select>
+        </div>
+
+        <!-- Clear Filters -->
+        <UiButton
+          v-if="hasActiveFilters"
+          @click="clearFilters"
+          variant="ghost"
+          size="sm"
+          class="ml-auto"
+        >
+          Clear Filters
+        </UiButton>
+      </div>
+    </div>
+
     <!-- Loading State -->
-    <div v-if="loading" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div
-        v-for="i in 6"
-        :key="i"
-        class="bg-admin-surface-base rounded-lg border border-admin-border overflow-hidden"
-      >
-        <!-- Image Skeleton -->
-        <UiSkeleton class="aspect-[16/9] w-full" />
-        <!-- Content Skeleton -->
-        <div class="p-4 space-y-3">
-          <UiSkeleton class="h-5 w-3/4" />
-          <UiSkeleton class="h-3 w-1/4" />
-          <UiSkeleton class="h-4 w-full" />
-          <UiSkeleton class="h-4 w-2/3" />
-          <UiSkeleton class="h-3 w-1/3" />
+    <div v-if="loading" class="bg-admin-surface-base rounded-lg border border-admin-border">
+      <div v-for="i in 5" :key="i" class="border-b border-admin-border last:border-b-0">
+        <div class="flex items-center gap-4 p-4">
+          <UiSkeleton class="w-20 h-20 rounded-lg" />
+          <div class="flex-1 space-y-2">
+            <UiSkeleton class="h-5 w-1/3" />
+            <UiSkeleton class="h-4 w-2/3" />
+            <UiSkeleton class="h-3 w-1/4" />
+          </div>
         </div>
       </div>
     </div>
@@ -56,15 +117,20 @@
     </UiAlert>
 
     <!-- Empty State -->
-    <div v-else-if="products.length === 0" class="bg-admin-surface-base rounded-lg border border-admin-border p-12 text-center">
+    <div v-else-if="filteredProducts.length === 0" class="bg-admin-surface-base rounded-lg border border-admin-border p-12 text-center">
       <div class="mx-auto w-16 h-16 bg-admin-surface-raised rounded-full flex items-center justify-center mb-4">
         <svg class="w-8 h-8 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
       </div>
-      <h3 class="text-lg font-medium text-admin-text-primary mb-1">No products yet</h3>
-      <p class="text-admin-text-secondary mb-4">Get started by adding your first product from Marianatek.</p>
+      <h3 class="text-lg font-medium text-admin-text-primary mb-1">
+        {{ hasActiveFilters ? 'No products match your filters' : 'No products yet' }}
+      </h3>
+      <p class="text-admin-text-secondary mb-4">
+        {{ hasActiveFilters ? 'Try adjusting your search or filters.' : 'Get started by adding your first product from Marianatek.' }}
+      </p>
       <UiButton
+        v-if="!hasActiveFilters"
         @click="openAddModal"
         variant="default"
         class="inline-flex items-center gap-2"
@@ -76,94 +142,63 @@
       </UiButton>
     </div>
 
-    <!-- Products Grid -->
-    <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div
-        v-for="product in products"
-        :key="product.id"
-        class="bg-admin-surface-base rounded-lg border border-admin-border overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative"
-        @click="handleProductCardClick(product.id, $event)"
-      >
-        <!-- Three-dot Menu -->
-        <div class="absolute top-2 right-2 z-10">
-          <UiDropdownMenu
-            :open="openMenuId === product.id"
-            @update:open="(value) => { if (value) toggleProductMenu(product.id); else closeProductMenu() }"
+    <!-- Products List -->
+    <div v-else class="bg-admin-surface-base rounded-lg border border-admin-border">
+      <div class="space-y-0">
+        <AdminProductListItem
+          v-for="product in paginatedProducts"
+          :key="product.id"
+          :product="product"
+          :expanded="expandedProducts.has(product.id)"
+          :selected-location-id="selectedLocationId"
+          :mt-subdomain="mtSubdomain"
+          @update:expanded="(value) => toggleProductExpanded(product.id, value)"
+          @edit="handleEditProduct"
+          @edit-on-mt="editOnMT"
+          @view-on-store="viewOnStore"
+          @toggle-visibility="toggleProductVisibility"
+          @delete="openDeleteModal"
+        />
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="border-t border-admin-border p-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-admin-text-secondary">
+            Showing {{ startIndex + 1 }}-{{ endIndex }} of {{ filteredProducts.length }} products
+          </span>
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-admin-text-secondary">Items per page:</label>
+            <select
+              v-model="itemsPerPage"
+              class="px-2 py-1 text-sm rounded border border-admin-border bg-admin-surface-base text-admin-text-primary focus:outline-none focus:ring-2 focus:ring-admin-brand-strong"
+            >
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <UiButton
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            variant="outline"
+            size="sm"
           >
-            <template #trigger>
-              <UiButton
-                variant="ghost"
-                size="icon"
-                class="p-1.5 bg-admin-surface-base/90 backdrop-blur-sm rounded-full hover:bg-admin-surface-base shadow-sm"
-              >
-                <svg class="w-5 h-5 text-admin-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-              </UiButton>
-            </template>
-            <UiDropdownMenuItem @click.stop="editOnMT(product)">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Edit on Mariana Tek
-            </UiDropdownMenuItem>
-            <UiDropdownMenuItem @click.stop="viewOnStore(product)">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              View on store
-            </UiDropdownMenuItem>
-            <UiDropdownMenuItem @click.stop="toggleProductVisibility(product)">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-              </svg>
-              {{ product.visible ? 'Disable' : 'Enable' }}
-            </UiDropdownMenuItem>
-            <UiDropdownMenuSeparator />
-            <UiDropdownMenuItem @click.stop="openDeleteModal(product)" class="text-admin-state-danger-text hover:bg-admin-state-danger-soft">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Delete from Sync
-            </UiDropdownMenuItem>
-          </UiDropdownMenu>
-        </div>
-
-        <!-- Image Preview -->
-        <div class="aspect-[16/9] bg-admin-surface-raised relative">
-          <img
-            v-if="getFeaturedImage(product)"
-            :src="getFullImageUrl(getFeaturedImage(product)!.imageUrl)"
-            :alt="`Product ${product.id}`"
-            class="w-full h-full object-cover"
-            @error="(e: Event) => (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23d1d5db%22%3E%3Cpath d=%22M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4%22/%3E%3C/svg%3E'"
-          />
-          <div v-else class="w-full h-full flex items-center justify-center">
-            <svg class="w-12 h-12 text-admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          </div>
-          <!-- Status Badge -->
-          <div class="absolute top-2 left-2">
-            <UiBadge :variant="product.visible ? 'success' : 'default'">
-              {{ product.visible ? 'Visible' : 'Hidden' }}
-            </UiBadge>
-          </div>
-        </div>
-
-        <!-- Details -->
-        <div class="p-4">
-          <h3 class="font-medium text-admin-text-primary mb-1 line-clamp-2">
-            {{ product.mtProductName || `Product #${product.mtProductId}` }}
-          </h3>
-          <p class="text-xs text-admin-text-secondary mb-1">ID: {{ product.mtProductId }}</p>
-          <p v-if="product.description" class="text-sm text-admin-text-secondary line-clamp-2 mb-2">
-            {{ product.description }}
-          </p>
-          <div class="text-xs text-admin-text-secondary">
-            {{ product.variants?.length || 0 }} variant{{ (product.variants?.length || 0) !== 1 ? 's' : '' }}
-          </div>
+            Previous
+          </UiButton>
+          <span class="text-sm text-admin-text-primary px-2">
+            Page {{ currentPage }} of {{ totalPages }}
+          </span>
+          <UiButton
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            variant="outline"
+            size="sm"
+          >
+            Next
+          </UiButton>
         </div>
       </div>
     </div>
@@ -314,6 +349,8 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const backendUrl = config.public.backendUrl
 const { fetchWithCache, invalidate } = useAdminCache()
+const { fetchStoreSettings } = useStoreSettings()
+const { fetchCategories } = useCategory()
 
 const loading = ref(false) // Start as false - only show loading if no cache
 const error = ref<string | null>(null)
@@ -332,6 +369,18 @@ const mtProducts = ref<any[]>([])
 const mtProductsTotal = ref(0)
 const mtProductsPage = ref(1)
 const mtProductsPageSize = ref(20)
+
+// Filters and pagination
+const selectedCategory = ref<string>('')
+const stockFilter = ref<string>('all')
+const statusFilter = ref<string>('all')
+const itemsPerPage = ref(10)
+const currentPage = ref(1)
+const expandedProducts = ref<Set<string>>(new Set())
+const selectedLocationId = ref<string | null>(null)
+const availableCategories = ref<any[]>([])
+
+// Categories are already imported above
 
 // Fetch products with cache-first strategy
 async function fetchProducts() {
@@ -473,6 +522,119 @@ async function selectMTProduct(product: any) {
   }
 }
 
+
+// Computed properties for filtering and pagination
+const filteredProducts = computed(() => {
+  let filtered = [...products.value]
+
+  // Search filter
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(product => {
+      const name = (product.mtProductName || '').toLowerCase()
+      const description = (product.description || '').toLowerCase()
+      return name.includes(query) || description.includes(query)
+    })
+  }
+
+  // Category filter
+  if (selectedCategory.value) {
+    filtered = filtered.filter(product => {
+      return product.categories?.some((cat: any) => cat.id === selectedCategory.value)
+    })
+  }
+
+  // Status filter
+  if (statusFilter.value === 'visible') {
+    filtered = filtered.filter(product => product.visible === true)
+  } else if (statusFilter.value === 'hidden') {
+    filtered = filtered.filter(product => product.visible === false)
+  }
+
+  // Stock filter (requires variants to be loaded, so we'll show all for now and filter client-side if possible)
+  // Note: Stock filtering would require loading all variants, which is expensive
+  // For now, we'll skip stock filtering or implement it as a post-filter after variants load
+
+  return filtered
+})
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value.trim() !== '' || 
+         selectedCategory.value !== '' || 
+         stockFilter.value !== 'all' || 
+         statusFilter.value !== 'all'
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredProducts.value.length / itemsPerPage.value)
+})
+
+const startIndex = computed(() => {
+  return (currentPage.value - 1) * itemsPerPage.value
+})
+
+const endIndex = computed(() => {
+  return Math.min(startIndex.value + itemsPerPage.value, filteredProducts.value.length)
+})
+
+const paginatedProducts = computed(() => {
+  return filteredProducts.value.slice(startIndex.value, endIndex.value)
+})
+
+// Functions
+function clearFilters() {
+  searchQuery.value = ''
+  selectedCategory.value = ''
+  stockFilter.value = 'all'
+  statusFilter.value = 'all'
+  currentPage.value = 1
+}
+
+function toggleProductExpanded(productId: string, expanded: boolean) {
+  if (expanded) {
+    expandedProducts.value.add(productId)
+  } else {
+    expandedProducts.value.delete(productId)
+  }
+}
+
+function handleEditProduct(product: any) {
+  const { navigateToProductEdit, setRouteState } = useAdminNavigation()
+  if (product && product.mtProductId) {
+    const productData = {
+      productName: product.mtProductName,
+      productDescription: product.description,
+    }
+    setRouteState(productData)
+    navigateToProductEdit(product.mtProductId, productData)
+  }
+}
+
+// Watch for filter changes to reset to page 1
+watch([searchQuery, selectedCategory, stockFilter, statusFilter], () => {
+  currentPage.value = 1
+})
+
+// Watch for itemsPerPage changes to reset to page 1
+watch(itemsPerPage, () => {
+  currentPage.value = 1
+})
+
+// Load location and categories
+async function loadLocationAndCategories() {
+  const tenantId = route.params.tenant as string
+  try {
+    // Load store settings to get default location
+    const storeSettings = await fetchStoreSettings(tenantId)
+    selectedLocationId.value = storeSettings.storeInfo.defaultLocationId || null
+
+    // Load categories for filter
+    const categories = await fetchCategories(tenantId)
+    availableCategories.value = categories || []
+  } catch (err: any) {
+    console.error('Error loading location/categories:', err)
+  }
+}
 
 function getFeaturedImage(product: any) {
   return product.images?.find((img: any) => img.isFeatured) || product.images?.[0]
@@ -666,8 +828,11 @@ async function confirmDelete() {
   }
 }
 
-onMounted(() => {
-  fetchProducts()
+onMounted(async () => {
+  await Promise.all([
+    fetchProducts(),
+    loadLocationAndCategories(),
+  ])
 })
 </script>
 

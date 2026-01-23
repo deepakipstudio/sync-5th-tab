@@ -1377,51 +1377,101 @@ export async function getProductVariantsByMtId(req: Request, res: Response) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Fetch variant data from MT for pricing/stock
+    // Fetch variant data from MT for pricing/stock using list endpoint
     const sessionData = result;
-    const variantIds = product.variants.map(v => v.mtVariantId);
     
-    const variantsWithMTData = await Promise.all(
-      product.variants.map(async (variant) => {
-        try {
-          const params = new URLSearchParams({});
-          if (inventory_location) {
-            params.append('inventory_location', String(inventory_location));
+    // Build query parameters for the list endpoint
+    const params = new URLSearchParams({
+      parent: String(mtProductId),
+      page: '1',
+      page_size: '100',
+    });
+    
+    if (inventory_location) {
+      params.append('inventory_location', String(inventory_location));
+    }
+
+    // Fetch all variants for this product in a single call
+    let mtVariantsMap = new Map<number, any>();
+    try {
+      const mtResponse = await proxyToMarianatek(`product_variants?${params.toString()}`, {
+        mtSubdomain: sessionData.tenant.mtSubdomain,
+        audience: 'admin',
+        accessToken: sessionData.session.accessToken,
+      });
+
+      if (mtResponse.ok) {
+        const mtResponseData = await mtResponse.json();
+        // MT API returns JSON:API format with 'data' array
+        const variants = mtResponseData.data || mtResponseData.results || [];
+        // Create a map of variant ID to MT data for quick lookup
+        variants.forEach((variant: any) => {
+          // JSON:API format: variant.id is a string, variant.attributes contains the data
+          const variantIdStr = variant.id;
+          if (variantIdStr) {
+            const variantId = parseInt(variantIdStr, 10);
+            if (!isNaN(variantId)) {
+              // Extract location-specific stock if inventory_location is provided
+              let locationStock = null;
+              let locationPrice = null;
+              
+              if (inventory_location && variant.attributes?.region_overrides) {
+                // Find stock for the specific location
+                for (const region of variant.attributes.region_overrides) {
+                  if (region.location_overrides) {
+                    const locationOverride = region.location_overrides.find(
+                      (loc: any) => String(loc.id) === String(inventory_location)
+                    );
+                    if (locationOverride) {
+                      locationStock = locationOverride.present_quantity != null 
+                        ? parseInt(locationOverride.present_quantity, 10) 
+                        : null;
+                      locationPrice = locationOverride.price != null
+                        ? parseFloat(locationOverride.price)
+                        : null;
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              // Flatten the structure for easier frontend access
+              const flattenedData = {
+                ...variant,
+                attributes: {
+                  ...variant.attributes,
+                  // Add location-specific stock and price at the top level for easy access
+                  present_quantity: locationStock ?? variant.attributes?.present_quantity ?? null,
+                  price: locationPrice ?? variant.attributes?.price ?? null,
+                }
+              };
+              
+              mtVariantsMap.set(variantId, flattenedData);
+            }
           }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching MT variants list:', error);
+    }
 
-          const mtResponse = await proxyToMarianatek(`product_variants/${variant.mtVariantId}?${params.toString()}`, {
-            mtSubdomain: sessionData.tenant.mtSubdomain,
-            audience: 'admin',
-            accessToken: sessionData.session.accessToken,
-          });
-
-          let mtData = null;
-          if (mtResponse.ok) {
-            const mtResponseData = await mtResponse.json();
-            mtData = mtResponseData.data;
-          }
-
-          return {
-            ...variant,
-            images: variant.images.map(img => ({
-              ...img,
-              imageUrl: storage.getImageUrl(img.filename, 'variant'),
-            })),
-            mtData, // Include MT pricing/stock data
-          };
-        } catch (error) {
-          console.error(`Error fetching MT data for variant ${variant.id}:`, error);
-          return {
-            ...variant,
-            images: variant.images.map(img => ({
-              ...img,
-              imageUrl: storage.getImageUrl(img.filename, 'variant'),
-            })),
-            mtData: null,
-          };
-        }
-      })
-    );
+    // Merge local variant data with MT data
+    const variantsWithMTData = product.variants.map((variant) => {
+      // Convert mtVariantId to number for Map lookup (Map key is number)
+      const variantIdNum = typeof variant.mtVariantId === 'string' 
+        ? parseInt(variant.mtVariantId, 10) 
+        : variant.mtVariantId;
+      const mtData = !isNaN(variantIdNum) ? mtVariantsMap.get(variantIdNum) || null : null;
+      
+      return {
+        ...variant,
+        images: variant.images.map(img => ({
+          ...img,
+          imageUrl: storage.getImageUrl(img.filename, 'variant'),
+        })),
+        mtData, // Include MT pricing/stock data with inventory_location context
+      };
+    });
 
     res.json({ variants: variantsWithMTData });
   } catch (error: any) {
