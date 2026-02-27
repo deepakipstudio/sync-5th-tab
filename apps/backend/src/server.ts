@@ -59,12 +59,24 @@ import {
   checkSlugAvailability,
   generateUniqueSlugFromName,
 } from './routes/categories';
+import {
+  getShopLocations,
+  getShopBanners,
+  getShopCategories,
+  getShopCategory,
+  getShopProducts,
+  getShopProduct,
+} from './routes/shop';
+import { getResizedImage } from './routes/images';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 // Note: express.urlencoded removed - multer handles multipart/form-data parsing including text fields
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// Image resize route (must be before static uploads)
+app.get('/images/:type/:size/:filename', getResizedImage);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -84,6 +96,14 @@ app.get('/tenants/:id/branding', getTenantBranding);
 
 // Tenant/customer routes
 app.get('/:tenant/products', getTenantProducts);
+
+// Shop/customer routes (require customer authentication)
+app.get('/shop/:tenant/locations', getShopLocations);
+app.get('/shop/:tenant/banners', getShopBanners);
+app.get('/shop/:tenant/categories', getShopCategories);
+app.get('/shop/:tenant/categories/:slug', getShopCategory);
+app.get('/shop/:tenant/products', getShopProducts);
+app.get('/shop/:tenant/products/:id', getShopProduct);
 
 // Admin routes
 app.get('/admin/:tenant/account', getAdminAccount);

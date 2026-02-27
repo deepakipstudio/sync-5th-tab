@@ -148,7 +148,7 @@ export async function postTenantBanner(req: Request, res: Response) {
     }
 
     // Parse form fields
-    const { categoryId, productClass, expiresAt, sortOrder, visible } = req.body;
+    const { categoryId, productClass, expiresAt, sortOrder, visible, title } = req.body;
 
     // Verify category belongs to tenant if provided
     if (categoryId) {
@@ -179,6 +179,7 @@ export async function postTenantBanner(req: Request, res: Response) {
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         size: req.file.size,
+        title: title || null,
         categoryId: categoryId || null,
         productClass: productClass || null,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
@@ -214,7 +215,7 @@ export async function putTenantBanner(req: Request, res: Response) {
     if (!existingBanner) return res.status(404).json({ error: 'banner not found' });
 
     // Parse form fields
-    const { categoryId, productClass, expiresAt, sortOrder, visible } = req.body;
+    const { categoryId, productClass, expiresAt, sortOrder, visible, title } = req.body;
 
     // Build update data
     const updateData: any = {};
@@ -253,6 +254,9 @@ export async function putTenantBanner(req: Request, res: Response) {
         }
       }
       updateData.categoryId = categoryId || null;
+    }
+    if (title !== undefined) {
+      updateData.title = title || null;
     }
     if (productClass !== undefined) {
       updateData.productClass = productClass || null;

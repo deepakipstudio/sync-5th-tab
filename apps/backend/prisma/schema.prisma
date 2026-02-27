@@ -27,6 +27,8 @@ model Product {
   id          String            @id @default(uuid(7))
   tenantId    String
   description String?
+  mtTitle     String?
+  mtDescription String?
   visible     Boolean           @default(true)
   sortOrder   Int?
   createdAt   DateTime          @default(now())
@@ -60,6 +62,7 @@ model Session {
 model Banner {
   id           String    @id @default(uuid(7))
   tenantId     String
+  title        String?
   productClass String?
   expiresAt    DateTime?
   sortOrder    Int?
@@ -79,17 +82,20 @@ model Banner {
 }
 
 model ProductVariant {
-  id          String         @id @default(uuid(7))
-  productId   String
-  mtVariantId String
-  sku         String
-  description String?
-  visible     Boolean        @default(true)
-  sortOrder   Int?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  images      ProductImage[]
-  product     Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id           String         @id @default(uuid(7))
+  productId    String
+  mtVariantId  String
+  sku          String
+  description  String?
+  mtTitle      String?
+  mtPrice      Decimal?       @db.Decimal(10, 2)
+  mtAttributes Json?
+  visible      Boolean        @default(true)
+  sortOrder    Int?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  images       ProductImage[]
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, mtVariantId])
   @@index([productId])

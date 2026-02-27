@@ -12,7 +12,20 @@ export async function authRedirect(req: Request, res: Response) {
   if (!role) return res.status(400).json({ error: 'role is required' });
 
   // Lookup tenant by UUID
-  const tenantRecord = await prisma.tenant.findUnique({ where: { id: tenant } });
+  let tenantRecord;
+  try {
+    tenantRecord = await prisma.tenant.findUnique({ where: { id: tenant } });
+  } catch (error: any) {
+    console.error('[authRedirect] Database error:', error);
+    if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
+      return res.status(503).json({ 
+        error: 'Database connection failed',
+        message: 'Unable to connect to database. Please check if your Neon database is active.'
+      });
+    }
+    return res.status(500).json({ error: 'Database error', message: error.message });
+  }
+  
   if (!tenantRecord) return res.status(404).json({ error: 'tenant not found' });
 
   const state = crypto.randomUUID();
@@ -52,7 +65,20 @@ export async function authCallback(req: Request, res: Response) {
 
     const role = entry.role; // Retrieve role from stored state
 
-    const tenant = await prisma.tenant.findUnique({ where: { id: entry.tenantId } });
+    let tenant;
+    try {
+      tenant = await prisma.tenant.findUnique({ where: { id: entry.tenantId } });
+    } catch (error: any) {
+      console.error('[authCallback] Database error:', error);
+      if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
+        return res.status(503).json({ 
+          error: 'Database connection failed',
+          message: 'Unable to connect to database. Please check if your Neon database is active.'
+        });
+      }
+      return res.status(500).json({ error: 'Database error', message: error.message });
+    }
+    
     if (!tenant) return res.status(404).json({ error: 'tenant not found' });
 
     const tokens = await exchangeCodeForTokens({

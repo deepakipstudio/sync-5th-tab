@@ -4,12 +4,18 @@ const DEFAULT_SECONDARY = '#a83d5a'
 interface TenantBranding {
   primaryBrandColor: string | null
   secondaryBrandColor: string | null
+  primaryForegroundColor: string | null
+  secondaryForegroundColor: string | null
+  storeName: string | null
 }
 
 export function useTenantBranding(tenantId: Ref<string | undefined> | ComputedRef<string | undefined> | string | undefined) {
   const config = useRuntimeConfig()
   const primaryColor = ref<string>(DEFAULT_PRIMARY)
   const secondaryColor = ref<string>(DEFAULT_SECONDARY)
+  const primaryForegroundColor = ref<string>('#ffffff')
+  const secondaryForegroundColor = ref<string>('#ffffff')
+  const storeName = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -24,6 +30,8 @@ export function useTenantBranding(tenantId: Ref<string | undefined> | ComputedRe
       // Use defaults if no tenant
       primaryColor.value = DEFAULT_PRIMARY
       secondaryColor.value = DEFAULT_SECONDARY
+      primaryForegroundColor.value = '#ffffff'
+      secondaryForegroundColor.value = '#ffffff'
       injectCSSVariables()
       return
     }
@@ -40,6 +48,9 @@ export function useTenantBranding(tenantId: Ref<string | undefined> | ComputedRe
       // Use tenant colors if available, otherwise fall back to defaults
       primaryColor.value = data.primaryBrandColor || DEFAULT_PRIMARY
       secondaryColor.value = data.secondaryBrandColor || DEFAULT_SECONDARY
+      primaryForegroundColor.value = data.primaryForegroundColor || '#ffffff'
+      secondaryForegroundColor.value = data.secondaryForegroundColor || '#ffffff'
+      storeName.value = data.storeName || null
 
       injectCSSVariables()
     } catch (e: any) {
@@ -47,6 +58,8 @@ export function useTenantBranding(tenantId: Ref<string | undefined> | ComputedRe
       // Use defaults on error
       primaryColor.value = DEFAULT_PRIMARY
       secondaryColor.value = DEFAULT_SECONDARY
+      primaryForegroundColor.value = '#ffffff'
+      secondaryForegroundColor.value = '#ffffff'
       injectCSSVariables()
     } finally {
       loading.value = false
@@ -70,6 +83,8 @@ export function useTenantBranding(tenantId: Ref<string | undefined> | ComputedRe
       :root {
         --tenant-primary: ${primaryColor.value};
         --tenant-secondary: ${secondaryColor.value};
+        --tenant-primary-foreground: ${primaryForegroundColor.value};
+        --tenant-secondary-foreground: ${secondaryForegroundColor.value};
       }
     `
     document.head.appendChild(style)
@@ -83,6 +98,8 @@ export function useTenantBranding(tenantId: Ref<string | undefined> | ComputedRe
       // Use defaults if no tenant
       primaryColor.value = DEFAULT_PRIMARY
       secondaryColor.value = DEFAULT_SECONDARY
+      primaryForegroundColor.value = '#ffffff'
+      secondaryForegroundColor.value = '#ffffff'
       injectCSSVariables()
     }
   }, { immediate: true })
@@ -90,6 +107,9 @@ export function useTenantBranding(tenantId: Ref<string | undefined> | ComputedRe
   return {
     primaryColor: readonly(primaryColor),
     secondaryColor: readonly(secondaryColor),
+    primaryForegroundColor: readonly(primaryForegroundColor),
+    secondaryForegroundColor: readonly(secondaryForegroundColor),
+    storeName: readonly(storeName),
     loading: readonly(loading),
     error: readonly(error),
     fetchBranding,

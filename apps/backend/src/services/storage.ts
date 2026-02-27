@@ -27,6 +27,7 @@ export interface StorageService {
   saveImage(buffer: Buffer, originalName: string, mimeType: string, type: 'product' | 'variant'): Promise<string>;
   deleteImage(filename: string, type: 'product' | 'variant'): Promise<void>;
   getImageUrl(filename: string, type: 'product' | 'variant'): string;
+  getResizedImageUrl(filename: string, type: 'product' | 'variant' | 'category' | 'banner', size: string): string;
   saveCategoryImage(buffer: Buffer, originalName: string, mimeType: string): Promise<string>;
   deleteCategoryImage(filename: string): Promise<void>;
   getCategoryImageUrl(filename: string): string;
@@ -123,6 +124,20 @@ export const localStorageService: StorageService = {
   getImageUrl(filename: string, type: 'product' | 'variant'): string {
     const folder = type === 'product' ? 'products' : 'variants';
     return `/uploads/${folder}/${filename}`;
+  },
+
+  /**
+   * Get the URL path for serving resized image
+   */
+  getResizedImageUrl(filename: string, type: 'product' | 'variant' | 'category' | 'banner', size: string): string {
+    const typeMap: Record<string, string> = {
+      product: 'products',
+      variant: 'variants',
+      category: 'categories',
+      banner: 'banners',
+    };
+    const folder = typeMap[type] || 'products';
+    return `/images/${folder}/${size}/${filename}`;
   },
 
   /**

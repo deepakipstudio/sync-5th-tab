@@ -1,6 +1,12 @@
 <template>
   <div>
+    <ShopHeader
+      :tenant-id="tenantId"
+      :cart-count="0"
+      @open-cart="cartOpen = true"
+    />
     <slot />
+    <ShopCartDrawer :open="cartOpen" @close="cartOpen = false" />
   </div>
 </template>
 
@@ -8,7 +14,8 @@
 const route = useRoute()
 const tenantId = computed(() => route.params.tenant as string | undefined)
 
-// Initialize tenant branding - pass the computed ref so it's reactive
+const cartOpen = ref(false)
+
 useTenantBranding(tenantId)
 </script>
 

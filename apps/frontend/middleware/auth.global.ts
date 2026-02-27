@@ -52,5 +52,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (isAdminRoute && role.value !== 'admin') {
     return navigateTo(`/admin/${tenantParam}/auth/login`)
   }
+
+  // Gate shop routes by customer role
+  if (isShopRoute && role.value !== 'customer') {
+    return navigateTo(`/shop/${tenantParam}/auth/login`)
+  }
 })
 

@@ -46,8 +46,12 @@ onMounted(async () => {
     }
 
     // Redirect based on role
-    const basePath = response.role === 'admin' ? '/admin' : '/shop'
-    await navigateTo(`${basePath}/${response.tenantId}`)
+    if (response.role === 'admin') {
+      await navigateTo(`/admin/${response.tenantId}`)
+    } else {
+      // Customer: redirect to location picker first
+      await navigateTo(`/shop/${response.tenantId}/location`)
+    }
   } catch (e: any) {
     console.error('OAuth callback error:', e)
     error.value = e.data?.error || e.message || 'Failed to complete authentication'

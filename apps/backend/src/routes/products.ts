@@ -429,6 +429,8 @@ export async function postTenantProduct(req: Request, res: Response) {
           tenantId: tenant,
           mtProductId: String(mtProductId),
           description: description || null,
+          mtTitle: mtProduct?.attributes?.title || null,
+          mtDescription: mtProduct?.attributes?.description || null,
           visible: visible === 'true',
           sortOrder: null,
         },
@@ -437,12 +439,19 @@ export async function postTenantProduct(req: Request, res: Response) {
       // Create all variants
       const variantPromises = mtVariants.map((mtVariant: any, index: number) => {
         const attrs = mtVariant.attributes || {};
+        const variantAttrs = Array.isArray(attrs.variant_attributes)
+          ? attrs.variant_attributes.filter((a: any) => a.value != null)
+          : [];
+        const priceRaw = attrs.price != null ? parseFloat(attrs.price) : null;
         return tx.productVariant.create({
           data: {
             productId: newProduct.id,
             mtVariantId: String(mtVariant.id),
             sku: attrs.sku || '',
             description: null,
+            mtTitle: attrs.title || null,
+            mtPrice: (priceRaw != null && !isNaN(priceRaw)) ? priceRaw : null,
+            mtAttributes: variantAttrs.length > 0 ? variantAttrs : undefined,
             visible: true,
             sortOrder: index,
           },
@@ -1988,7 +1997,19 @@ export async function syncProducts(req: Request, res: Response) {
         }
 
         const productData = await productResponse.json();
-        
+        const mtProductAttrs = productData.data?.attributes || {};
+
+        // Update product with MT title/description if changed
+        if (mtProductAttrs.title && mtProductAttrs.title !== product.mtTitle) {
+          await prisma.product.update({
+            where: { id: product.id },
+            data: {
+              mtTitle: mtProductAttrs.title,
+              mtDescription: mtProductAttrs.description || null,
+            },
+          });
+        }
+
         // Fetch variants from MT
         const variantParams = new URLSearchParams({
           parent: String(product.mtProductId),
@@ -2031,12 +2052,19 @@ export async function syncProducts(req: Request, res: Response) {
           // Create new variants
           for (const mtVariant of newVariants) {
             const attrs = mtVariant.attributes || {};
+            const variantAttrs = Array.isArray(attrs.variant_attributes)
+              ? attrs.variant_attributes.filter((a: any) => a.value != null)
+              : [];
+            const priceRaw = attrs.price != null ? parseFloat(attrs.price) : null;
             await tx.productVariant.create({
               data: {
                 productId: product.id,
                 mtVariantId: String(mtVariant.id),
                 sku: attrs.sku || '',
                 description: null,
+                mtTitle: attrs.title || null,
+                mtPrice: (priceRaw != null && !isNaN(priceRaw)) ? priceRaw : null,
+                mtAttributes: variantAttrs.length > 0 ? variantAttrs : undefined,
                 visible: true,
                 sortOrder: product.variants.length + newVariants.indexOf(mtVariant),
               },
@@ -2044,16 +2072,49 @@ export async function syncProducts(req: Request, res: Response) {
             summary.newVariants++;
           }
 
-          // Update SKU for changed variants
+          // Update SKU + price + attributes for changed variants
           for (const variant of updatedVariants) {
             const mtVariant = mtVariantMap.get(variant.mtVariantId);
             if (mtVariant) {
               const attrs = mtVariant.attributes || {};
+              const variantAttrs = Array.isArray(attrs.variant_attributes)
+                ? attrs.variant_attributes.filter((a: any) => a.value != null)
+                : [];
+              const priceRaw = attrs.price != null ? parseFloat(attrs.price) : null;
               await tx.productVariant.update({
                 where: { id: variant.id },
-                data: { sku: attrs.sku || variant.sku },
+                data: {
+                  sku: attrs.sku || variant.sku,
+                  mtTitle: attrs.title || null,
+                  mtPrice: (priceRaw != null && !isNaN(priceRaw)) ? priceRaw : null,
+                  mtAttributes: variantAttrs.length > 0 ? variantAttrs : undefined,
+                },
               });
               summary.updatedVariants++;
+            }
+          }
+
+          // Refresh price + attributes for all unchanged existing variants too
+          const unchangedVariants = product.variants.filter(v => {
+            const mtVariant = mtVariantMap.get(v.mtVariantId);
+            return mtVariant && !updatedVariants.includes(v);
+          });
+          for (const variant of unchangedVariants) {
+            const mtVariant = mtVariantMap.get(variant.mtVariantId);
+            if (mtVariant) {
+              const attrs = mtVariant.attributes || {};
+              const variantAttrs = Array.isArray(attrs.variant_attributes)
+                ? attrs.variant_attributes.filter((a: any) => a.value != null)
+                : [];
+              const priceRaw = attrs.price != null ? parseFloat(attrs.price) : null;
+              await tx.productVariant.update({
+                where: { id: variant.id },
+                data: {
+                  mtTitle: attrs.title || null,
+                  mtPrice: (priceRaw != null && !isNaN(priceRaw)) ? priceRaw : null,
+                  mtAttributes: variantAttrs.length > 0 ? variantAttrs : undefined,
+                },
+              });
             }
           }
 

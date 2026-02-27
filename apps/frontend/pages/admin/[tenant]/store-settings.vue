@@ -570,6 +570,16 @@
               </div>
             </div>
 
+            <!-- Title -->
+            <div>
+              <UiLabel class="block mb-1">Title</UiLabel>
+              <UiInput
+                v-model="form.title"
+                type="text"
+                placeholder="Optional banner title"
+              />
+            </div>
+
             <!-- Category -->
             <div>
               <UiLabel class="block mb-1">
@@ -808,6 +818,7 @@ interface Banner {
   imageUrl: string
   filename?: string
   originalName?: string
+  title: string | null
   categoryId: string | null
   category?: { id: string; name: string } | null
   productClass: string | null
@@ -862,6 +873,7 @@ const isDragging = ref(false)
 
 // Form state
 const form = ref({
+  title: '',
   categoryId: null as string | null,
   productClass: '',
   expiresAt: '',
@@ -1394,6 +1406,7 @@ function formatFileSize(bytes: number): string {
 function openCreateModal() {
   editingBanner.value = null
   form.value = {
+    title: '',
     categoryId: null,
     productClass: '',
     expiresAt: '',
@@ -1410,6 +1423,7 @@ function openCreateModal() {
 function openEditModal(banner: Banner) {
   editingBanner.value = banner
   form.value = {
+    title: banner.title || '',
     categoryId: banner.categoryId,
     productClass: banner.productClass || '',
     expiresAt: banner.expiresAt ? formatDateTimeLocal(banner.expiresAt) : '',
@@ -1445,6 +1459,8 @@ async function saveBanner() {
     if (selectedFile.value) {
       formData.append('image', selectedFile.value)
     }
+
+    formData.append('title', form.value.title || '')
     
     if (form.value.categoryId) {
       formData.append('categoryId', form.value.categoryId)

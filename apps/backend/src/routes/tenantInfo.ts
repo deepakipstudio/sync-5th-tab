@@ -31,21 +31,27 @@ export async function getTenantBranding(req: Request, res: Response) {
   try {
     const { id } = req.params;
     
-    const tenant = await prisma.tenant.findUnique({
-      where: { id },
+    const tenantBrand = await prisma.tenantBrand.findUnique({
+      where: { tenantId: id },
       select: {
-        primaryBrandColor: true,
-        secondaryBrandColor: true,
+        primaryColor: true,
+        secondaryColor: true,
+        primaryForegroundColor: true,
+        secondaryForegroundColor: true,
+        storeName: true,
       }
     });
     
-    if (!tenant) {
-      return res.status(404).json({ error: 'Tenant not found' });
+    if (!tenantBrand) {
+      return res.status(404).json({ error: 'Tenant brand not found' });
     }
     
     res.json({
-      primaryBrandColor: tenant.primaryBrandColor,
-      secondaryBrandColor: tenant.secondaryBrandColor,
+      primaryBrandColor: tenantBrand.primaryColor,
+      secondaryBrandColor: tenantBrand.secondaryColor,
+      primaryForegroundColor: tenantBrand.primaryForegroundColor,
+      secondaryForegroundColor: tenantBrand.secondaryForegroundColor,
+      storeName: tenantBrand.storeName || null,
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
